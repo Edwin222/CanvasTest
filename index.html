@@ -3,94 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>샘플 타워 디펜스</title>
+    <title>샘플 타워 디펜스 (Sound Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; user-select: none; overflow: hidden; touch-action: none; }
         canvas { touch-action: none; }
         
-        .shop-card {
-            transition: all 0.2s;
-            border: 2px solid #374151;
-        }
-        .shop-card:hover:not(:disabled) {
-            transform: translateY(-4px);
-            border-color: #fbbf24;
-            background-color: #374151;
-        }
-        .shop-card.selected {
-            border-color: #3b82f6;
-            background-color: #1f2937;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-        }
-        .shop-card:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            filter: grayscale(100%);
-        }
+        .shop-card { transition: all 0.2s; border: 2px solid #374151; }
+        .shop-card:hover:not(:disabled) { transform: translateY(-4px); border-color: #fbbf24; background-color: #374151; }
+        .shop-card.selected { border-color: #3b82f6; background-color: #1f2937; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        .shop-card:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
 
-        /* 유물 카드 스타일 */
-        .artifact-card {
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .artifact-card:hover {
-            transform: scale(1.05);
-        }
+        .artifact-card { transition: all 0.3s; cursor: pointer; }
+        .artifact-card:hover { transform: scale(1.05); }
         .rarity-common { border-color: #9ca3af; box-shadow: 0 0 10px rgba(156, 163, 175, 0.2); }
         .rarity-rare { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
         .rarity-epic { border-color: #d946ef; box-shadow: 0 0 20px rgba(217, 70, 239, 0.4); }
         .rarity-legendary { border-color: #f97316; box-shadow: 0 0 25px rgba(249, 115, 22, 0.6); animation: pulse-orange 2s infinite; }
 
-        /* UI 파티클 스타일 */
-        .ui-particle {
-            position: absolute;
-            pointer-events: none;
-            border-radius: 50%;
-            z-index: 100;
-            animation: particle-fade 1s forwards;
-        }
-        @keyframes particle-fade {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; top: var(--end-y); left: var(--end-x); }
-        }
+        .ui-particle { position: absolute; pointer-events: none; border-radius: 50%; z-index: 100; animation: particle-fade 1s forwards; }
+        @keyframes particle-fade { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(0); opacity: 0; top: var(--end-y); left: var(--end-x); } }
 
-        /* 보유 유물 목록 아이템 스타일 */
-        .my-artifact-item {
-            border-left-width: 4px;
-        }
-        
-        /* DPS 패널 스타일 */
-        .dps-row {
-            transition: all 0.3s ease;
-        }
+        .my-artifact-item { border-left-width: 4px; }
+        .dps-row { transition: all 0.3s ease; }
 
-        @keyframes pulse-orange {
-            0% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
-            50% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.8); }
-            100% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
-        }
+        @keyframes pulse-orange { 0% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); } 50% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.8); } 100% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); } }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .phase-toast { animation: slideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .phase-toast {
-            animation: slideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        /* 레벨 별 텍스트 색상 */
-        .level-1 { color: #d1d5db; } /* 은색 */
-        .level-2 { color: #60a5fa; text-shadow: 0 0 5px #3b82f6; } /* 파란색 */
-        .level-3 { color: #fbbf24; text-shadow: 0 0 5px #f59e0b; } /* 금색 */
-        .level-4 { color: #a855f7; text-shadow: 0 0 8px #d8b4fe; } /* 보라색 */
-        .level-5 { color: #ef4444; text-shadow: 0 0 10px #fca5a5; animation: pulse-text 1s infinite; } /* 빨간색 */
-
-        @keyframes pulse-text {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
+        .level-1 { color: #d1d5db; }
+        .level-2 { color: #60a5fa; text-shadow: 0 0 5px #3b82f6; }
+        .level-3 { color: #f472b6; text-shadow: 0 0 5px #ec4899; }
+        .level-4 { color: #fb923c; text-shadow: 0 0 8px #f97316; }
+        .level-5 { color: #ef4444; text-shadow: 0 0 10px #fca5a5; animation: pulse-text 1s infinite; }
+        @keyframes pulse-text { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
@@ -109,18 +56,12 @@
         </div>
 
         <div class="flex gap-2">
-            <button id="stats-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">
-                📊 통계
-            </button>
-            <button id="inventory-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">
-                🏺 유물
-            </button>
-            <button id="speed-btn" class="bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95 w-16">
-                ⏩ 1x
-            </button>
-            <button id="start-wave-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold transition shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1">
-                전투!
-            </button>
+            <button id="help-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">❓</button> <!-- 도움말 버튼 -->
+            <button id="sound-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">🔊</button>
+            <button id="stats-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">📊</button>
+            <button id="inventory-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">🏺</button>
+            <button id="speed-btn" class="bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95 w-16">⏩ 1x</button>
+            <button id="start-wave-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold transition shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1">전투!</button>
         </div>
     </div>
 
@@ -134,9 +75,7 @@
                 <span>전투 통계 (DPS)</span>
                 <span class="text-xs text-gray-400 font-normal">실시간</span>
             </h3>
-            <div id="dps-list" class="flex flex-col gap-1 text-xs">
-                <!-- 자바스크립트로 채워짐 -->
-            </div>
+            <div id="dps-list" class="flex flex-col gap-1 text-xs"></div>
         </div>
 
         <!-- 타워 정보 패널 -->
@@ -155,19 +94,14 @@
             <h2 class="text-6xl font-bold text-red-500 mb-2">GAME OVER</h2>
             <p class="text-gray-400 mb-6 text-xl">왕국이 함락되었습니다.</p>
             <p class="text-2xl mb-8 font-bold">최종 웨이브: <span id="final-wave" class="text-yellow-400">1</span></p>
-            
-            <button onclick="location.reload()" class="bg-yellow-500 hover:bg-yellow-400 text-black px-8 py-3 rounded-xl font-bold text-xl transition transform hover:scale-105">
-                다시 도전하기
-            </button>
+            <button onclick="location.reload()" class="bg-yellow-500 hover:bg-yellow-400 text-black px-8 py-3 rounded-xl font-bold text-xl transition transform hover:scale-105">다시 도전하기</button>
         </div>
 
         <!-- 유물 선택 모달 -->
         <div id="artifact-modal" class="hidden absolute inset-0 bg-black/95 flex flex-col justify-center items-center z-40 p-4">
             <h2 class="text-4xl font-bold text-yellow-400 mb-2">✨ 유물 발견!</h2>
             <p class="text-gray-400 mb-8">모든 타워에 적용될 효과를 선택하세요.</p>
-            <div id="artifact-container" class="flex flex-col md:flex-row gap-6 w-full max-w-5xl justify-center items-stretch">
-                <!-- 자바스크립트로 카드 생성 -->
-            </div>
+            <div id="artifact-container" class="flex flex-col md:flex-row gap-6 w-full max-w-5xl justify-center items-stretch"></div>
         </div>
 
         <!-- 보유 유물 목록 모달 -->
@@ -177,16 +111,25 @@
                     <h2 class="text-2xl font-bold text-white">🏺 보유 유물</h2>
                     <button onclick="document.getElementById('inventory-modal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
                 </div>
-                <div id="my-artifact-list" class="p-4 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="text-gray-500 text-center col-span-full py-10">아직 획득한 유물이 없습니다.</div>
+                <div id="my-artifact-list" class="p-4 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+        </div>
+
+        <!-- 도움말 모달 (추가됨) -->
+        <div id="help-modal" class="hidden absolute inset-0 bg-black/80 flex flex-col justify-center items-center z-50 p-4">
+            <div class="bg-gray-800 w-full max-w-3xl rounded-xl border border-gray-600 shadow-2xl flex flex-col max-h-[85vh]">
+                <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 rounded-t-xl">
+                    <h2 class="text-2xl font-bold text-yellow-400">📖 타워 도감</h2>
+                    <button onclick="document.getElementById('help-modal').classList.add('hidden')" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+                </div>
+                <div id="help-content" class="p-6 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-800">
+                    <!-- 자바스크립트로 타워 정보 생성 -->
                 </div>
             </div>
         </div>
         
         <!-- 알림 메시지 -->
-        <div id="phase-toast" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-xl z-40 font-bold phase-toast whitespace-nowrap">
-            알림
-        </div>
+        <div id="phase-toast" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-xl z-40 font-bold phase-toast whitespace-nowrap">알림</div>
     </div>
 
     <!-- 하단 상점 패널 -->
@@ -201,82 +144,42 @@
             </div>
             <span class="text-xs text-gray-500 hidden sm:block" id="shop-status-text">타워를 드래그하여 이동할 수 있습니다.</span>
         </div>
-        <div id="shop-container" class="flex-1 flex items-center justify-center gap-2 sm:gap-4 p-2 sm:p-4 overflow-x-auto bg-gray-800">
-            <!-- 상점 아이템 -->
-        </div>
+        <div id="shop-container" class="flex-1 flex items-center justify-center gap-2 sm:gap-4 p-2 sm:p-4 overflow-x-auto bg-gray-800"></div>
     </div>
 
-    <!-- UI 이펙트 레이어 -->
     <div id="ui-effect-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-[100]"></div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startBtn = document.getElementById('start-wave-btn');
-        const speedBtn = document.getElementById('speed-btn');
-        const inventoryBtn = document.getElementById('inventory-btn');
-        const statsBtn = document.getElementById('stats-btn');
-        const livesDisplay = document.getElementById('lives-display');
-        const moneyDisplay = document.getElementById('money-display');
-        const waveDisplay = document.getElementById('wave-display');
-        const gameOverModal = document.getElementById('game-over-modal');
-        const artifactModal = document.getElementById('artifact-modal');
-        const artifactContainer = document.getElementById('artifact-container');
-        const inventoryModal = document.getElementById('inventory-modal');
-        const myArtifactList = document.getElementById('my-artifact-list');
-        const dpsPanel = document.getElementById('dps-panel');
-        const dpsList = document.getElementById('dps-list');
-        const shopContainer = document.getElementById('shop-container');
-        const phaseBadge = document.getElementById('phase-badge');
-        const phaseToast = document.getElementById('phase-toast');
-        const towerInfoPanel = document.getElementById('tower-info-panel');
-        const sellBtn = document.getElementById('sell-btn');
-        const rerollBtn = document.getElementById('reroll-btn');
+        const TOWER_DATA = {
+            basic: { name: '전사', range: 120, damage: 90, cooldown: 50, color: '#3b82f6', shape: 'circle', desc: '적중시킨 적을 잠시 기절시킵니다.' },
+            rapid: { name: '궁수', range: 200, damage: 12, cooldown: 9, color: '#eab308', shape: 'square', desc: '공격속도가 빠른 타워입니다.' },
+            ice:   { name: '마법사', range: 130, damage: 8, cooldown: 45, color: '#22d3ee', shape: 'snowflake', slowFactor: 0.5, slowDuration: 90, desc: '적중시킨 적을 잠시 둔화시킵니다.' },
+            sniper: { name: '저격수', range: 350, damage: 90, cooldown: 120, color: '#dc2626', shape: 'ring', critChance: 0.5, desc: '50% 확률로 치명타를 입힙니다.' },
+            aoe:    { name: '포병', range: 150, damage: 80, cooldown: 80, color: '#a855f7', shape: 'rect', aoe: true, desc: '원형 범위 공격을 합니다' },
+            laser:  { name: '레이저', range: 250, damage: 40, cooldown: 60, color: '#38bdf8', shape: 'triangle', desc: '직선 범위 공격을 합니다' },
+            flame:  { name: '화염방사기', range: 120, damage: 2, cooldown: 4, color: '#f97316', shape: 'pentagon', desc: '근거리 부채꼴 범위 공격을 합니다' },
+            poison: { name: '독 타워', range: 140, damage: 10, cooldown: 60, color: '#22c55e', shape: 'hexagon', duration: 180, poolRadius: 40, desc: '독 장판을 설치해 받는 피해를 증가시킵니다.' }
+        };
 
-        // 게임 상수
-        const BASE_WIDTH = 800;
-        const BASE_HEIGHT = 600;
-        const BASE_GRID_SIZE = 40;
-        const TOWER_COST = 100;
-        const REROLL_COST = 10;
-        
-        let CANVAS_WIDTH = 800;
-        let CANVAS_HEIGHT = 600;
-        let gameSpeed = 1; 
-
-        const pathPoints = [
-            {x: 0, y: 100}, 
-            {x: 220, y: 100}, 
-            {x: 220, y: 420}, 
-            {x: 500, y: 420}, 
-            {x: 500, y: 220}, 
-            {x: 700, y: 220}, 
-            {x: 700, y: 500}, 
-            {x: 800, y: 500}
-        ];
-
-        const ENEMY_TYPES = {
+        const ENEMY_DATA = {
             NORMAL: { name: '오크', speed: 1.5, hpMod: 1.0, radius: 15, color: '#22c55e', reward: 10 },
             FAST:   { name: '고블린', speed: 2.8, hpMod: 0.5, radius: 12, color: '#facc15', reward: 12 },
             TANK:   { name: '골렘', speed: 0.8, hpMod: 3.5, radius: 22, color: '#a855f7', reward: 25 },
             BOSS:   { name: '드래곤', speed: 0.5, hpMod: 20.0, radius: 35, color: '#ef4444', reward: 150 }
         };
 
-        const TOWER_TYPES = {
-            basic: { name: '전사', range: 120, damage: 60, cooldown: 50, color: '#3b82f6', shape: 'circle' },
-            rapid: { name: '궁수', range: 150, damage: 12, cooldown: 9, color: '#eab308', shape: 'square' },
-            ice:   { name: '마법사', range: 130, damage: 8, cooldown: 45, color: '#22d3ee', shape: 'snowflake', slowFactor: 0.5, slowDuration: 90 },
-            sniper: { name: '저격수', range: 350, damage: 90, cooldown: 120, color: '#dc2626', shape: 'ring' },
-            aoe:    { name: '포병', range: 150, damage: 35, cooldown: 80, color: '#a855f7', shape: 'rect', aoe: true },
-            laser:  { name: '레이저', range: 250, damage: 40, cooldown: 60, color: '#38bdf8', shape: 'triangle' },
-            flame:  { name: '화염방사기', range: 120, damage: 2, cooldown: 4, color: '#f97316', shape: 'pentagon' } 
+        const WAVE_DATA = {
+            towerCost: 100,
+            rerollCost: 10,
+            baseHp: 100,
+            hpGrowthBase: 40,
+            hpCompoundRate: { early: 1.04, mid: 1.06, late: 1.065 },
+            rewardGrowth: 1.0, 
+            bossInterval: 10
         };
 
-        const TOWER_KEYS = Object.keys(TOWER_TYPES);
-
-        // 유물 데이터
-        const ARTIFACTS = [
-            // Common (45종)
+        const ARTIFACT_DATA = [
+            // Common
             { id: 'c1', name: '훈련용 검', rarity: 'common', targetType: 'all', desc: '공격력 +5%', effect: { damage: 0.05 } },
             { id: 'c2', name: '낡은 활', rarity: 'common', targetType: 'all', desc: '사거리 +5%', effect: { range: 0.05 } },
             { id: 'c3', name: '오일', rarity: 'common', targetType: 'all', desc: '쿨타임 -3%', effect: { cooldown: -0.03 } },
@@ -320,8 +223,12 @@
             { id: 'c_flm2', name: '긴 노즐', rarity: 'common', targetType: 'flame', desc: '사거리 +10%', effect: { range: 0.10 } },
             { id: 'c_flm3', name: '고압 밸브', rarity: 'common', targetType: 'flame', desc: '쿨타임 -5%', effect: { cooldown: -0.05 } },
             { id: 'c_flm4', name: '점화 플러그', rarity: 'common', targetType: 'flame', desc: '공격력 +5%, 쿨타임 -3%', effect: { damage: 0.05, cooldown: -0.03 } },
+            { id: 'c_psn1', name: '독약 병', rarity: 'common', targetType: 'poison', desc: '공격력 +10%', effect: { damage: 0.10 } },
+            { id: 'c_psn2', name: '점성 물질', rarity: 'common', targetType: 'poison', desc: '지속시간 +10%', effect: { duration: 0.10 } },
+            { id: 'c_psn3', name: '부식성 산', rarity: 'common', targetType: 'poison', desc: '쿨타임 -5%', effect: { cooldown: -0.05 } },
+            { id: 'c_psn4', name: '넓은 병', rarity: 'common', targetType: 'poison', desc: '범위 +10%', effect: { poolRadius: 0.10 } },
 
-            // Rare (30종)
+            // Rare
             { id: 'r1', name: '강철 검', rarity: 'rare', targetType: 'all', desc: '공격력 +10%', effect: { damage: 0.10 } },
             { id: 'r2', name: '장궁', rarity: 'rare', targetType: 'all', desc: '사거리 +10%', effect: { range: 0.10 } },
             { id: 'r3', name: '엔진 오일', rarity: 'rare', targetType: 'all', desc: '쿨타임 -7%', effect: { cooldown: -0.07 } },
@@ -338,20 +245,26 @@
             { id: 'r_arc1', name: '연발 사격', rarity: 'rare', targetType: 'rapid', desc: '쿨타임 -15%', effect: { cooldown: -0.15 } },
             { id: 'r_arc2', name: '합금 화살', rarity: 'rare', targetType: 'rapid', desc: '공격력 +25%', effect: { damage: 0.25 } },
             { id: 'r_arc3', name: '바람의 노래', rarity: 'rare', targetType: 'rapid', desc: '사거리 +20%, 쿨타임 -5%', effect: { range: 0.20, cooldown: -0.05 } },
-            { id: 'r_ice1', name: '절대 영도', rarity: 'rare', targetType: 'ice', desc: '공격력 +40%', effect: { damage: 0.40 } },
+            
+            { id: 'r_ice1', name: '절대 영도', rarity: 'rare', targetType: 'ice', desc: '둔화율 +10%', effect: { slowFactor: 0.10 } }, 
             { id: 'r_ice2', name: '눈보라 생성기', rarity: 'rare', targetType: 'ice', desc: '쿨타임 -15%', effect: { cooldown: -0.15 } },
-            { id: 'r_ice3', name: '광역 냉각', rarity: 'rare', targetType: 'ice', desc: '사거리 +25%', effect: { range: 0.25 } },
+            { id: 'r_ice3', name: '혹한의 바람', rarity: 'rare', targetType: 'ice', desc: '둔화 시간 +25%', effect: { slowDuration: 0.25 } }, 
+
             { id: 'r_snp1', name: '암살자의 표식', rarity: 'rare', targetType: 'sniper', desc: '공격력 +35%', effect: { damage: 0.35 } },
             { id: 'r_snp2', name: '고배율 렌즈', rarity: 'rare', targetType: 'sniper', desc: '사거리 +30%', effect: { range: 0.30 } },
-            { id: 'r_snp3', name: '속사 트리거', rarity: 'rare', targetType: 'sniper', desc: '쿨타임 -20%', effect: { cooldown: -0.20 } },
+            { id: 'r_snp3', name: '약점 포착', rarity: 'rare', targetType: 'sniper', desc: '치명타 확률 +10%', effect: { critChance: 0.10 } }, 
+
             { id: 'r_aoe1', name: '네이팜 탄', rarity: 'rare', targetType: 'aoe', desc: '공격력 +25%', effect: { damage: 0.25 } },
             { id: 'r_aoe2', name: '자동 장전기', rarity: 'rare', targetType: 'aoe', desc: '쿨타임 -15%', effect: { cooldown: -0.15 } },
             { id: 'r_lsr1', name: '고출력 발생기', rarity: 'rare', targetType: 'laser', desc: '공격력 +30%', effect: { damage: 0.30 } },
             { id: 'r_lsr2', name: '집광 렌즈', rarity: 'rare', targetType: 'laser', desc: '사거리 +20%, 공격력 +10%', effect: { range: 0.20, damage: 0.10 } },
             { id: 'r_flm1', name: '지옥의 불꽃', rarity: 'rare', targetType: 'flame', desc: '공격력 +30%', effect: { damage: 0.30 } },
             { id: 'r_flm2', name: '가압 펌프', rarity: 'rare', targetType: 'flame', desc: '사거리 +25%', effect: { range: 0.25 } },
+            { id: 'r_psn1', name: '맹독', rarity: 'rare', targetType: 'poison', desc: '공격력 +30%', effect: { damage: 0.30 } },
+            { id: 'r_psn2', name: '오염지대', rarity: 'rare', targetType: 'poison', desc: '범위 +25%, 지속시간 +10%', effect: { poolRadius: 0.25, duration: 0.10 } },
+            { id: 'r_psn3', name: '신경독', rarity: 'rare', targetType: 'poison', desc: '쿨타임 -15%', effect: { cooldown: -0.15 } },
 
-            // Epic (22종)
+            // Epic
             { id: 'e1', name: '미스릴 검', rarity: 'epic', targetType: 'all', desc: '공격력 +20%', effect: { damage: 0.20 } },
             { id: 'e2', name: '엘프의 활', rarity: 'epic', targetType: 'all', desc: '사거리 +20%, 쿨타임 -5%', effect: { range: 0.20, cooldown: -0.05 } },
             { id: 'e3', name: '타임 머신 부품', rarity: 'epic', targetType: 'all', desc: '쿨타임 -15%', effect: { cooldown: -0.15 } },
@@ -367,747 +280,234 @@
             { id: 'e_ice2', name: '눈의 여왕', rarity: 'epic', targetType: 'ice', desc: '사거리 +40%, 쿨타임 -10%', effect: { range: 0.40, cooldown: -0.10 } },
             { id: 'e_snp1', name: '레일건', rarity: 'epic', targetType: 'sniper', desc: '공격력 +60%', effect: { damage: 0.60 } },
             { id: 'e_snp2', name: '위성 조준', rarity: 'epic', targetType: 'sniper', desc: '사거리 +60%', effect: { range: 0.60 } },
+            { id: 'e_snp1_2', name: '헤드샷 연마', rarity: 'epic', targetType: 'sniper', desc: '치명타 확률 +15%', effect: { critChance: 0.15 } }, 
             { id: 'e_aoe1', name: '핵탄두', rarity: 'epic', targetType: 'aoe', desc: '공격력 +60%', effect: { damage: 0.60 } },
             { id: 'e_aoe2', name: '속사포 개조', rarity: 'epic', targetType: 'aoe', desc: '쿨타임 -30%', effect: { cooldown: -0.30 } },
             { id: 'e_lsr1', name: '감마선', rarity: 'epic', targetType: 'laser', desc: '공격력 +50%, 쿨타임 -10%', effect: { damage: 0.50, cooldown: -0.10 } },
             { id: 'e_lsr2', name: '무한 동력', rarity: 'epic', targetType: 'laser', desc: '쿨타임 -25%', effect: { cooldown: -0.25 } },
             { id: 'e_flm1', name: '드래곤 브레스', rarity: 'epic', targetType: 'flame', desc: '공격력 +50%, 사거리 +20%', effect: { damage: 0.50, range: 0.20 } },
             { id: 'e_flm2', name: '지옥불', rarity: 'epic', targetType: 'flame', desc: '사거리 +50%', effect: { range: 0.50 } },
+            { id: 'e_psn1', name: '역병의 근원', rarity: 'epic', targetType: 'poison', desc: '범위 +40%, 공격력 +30%', effect: { poolRadius: 0.40, damage: 0.30 } },
+            { id: 'e_psn2', name: '치명적 독소', rarity: 'epic', targetType: 'poison', desc: '공격력 +70%', effect: { damage: 0.70 } },
 
-            // Legendary (10종)
+            // Legendary
             { id: 'l1', name: '엑스칼리버', rarity: 'legendary', targetType: 'all', desc: '공격력 +50%', effect: { damage: 0.50 } },
             { id: 'l2', name: '신의 눈동자', rarity: 'legendary', targetType: 'all', desc: '사거리 +50%', effect: { range: 0.50 } },
             { id: 'l3', name: '시간의 모래시계', rarity: 'legendary', targetType: 'all', desc: '쿨타임 -30%', effect: { cooldown: -0.30 } },
             { id: 'l_war', name: '전신의 권능', rarity: 'legendary', targetType: 'basic', desc: '공격력 +150%', effect: { damage: 1.50 } },
             { id: 'l_arc', name: '바람의 신', rarity: 'legendary', targetType: 'rapid', desc: '쿨타임 -50%', effect: { cooldown: -0.50 } },
             { id: 'l_ice', name: '빙하시대', rarity: 'legendary', targetType: 'ice', desc: '사거리 +100%', effect: { range: 1.00 } },
-            { id: 'l_snp', name: '죽음의 시선', rarity: 'legendary', targetType: 'sniper', desc: '공격력 +100%, 사거리 +50%', effect: { damage: 1.00, range: 0.50 } },
+            { id: 'l_snp', name: '죽음의 시선', rarity: 'legendary', targetType: 'sniper', desc: '치명타 확률 +20%, 공격력 +100%', effect: { critChance: 0.20, damage: 1.00 } }, 
             { id: 'l_aoe', name: '아포칼립스', rarity: 'legendary', targetType: 'aoe', desc: '공격력 +100%', effect: { damage: 1.00 } },
             { id: 'l_lsr', name: '행성 파괴자', rarity: 'legendary', targetType: 'laser', desc: '쿨타임 -40%, 공격력 +40%', effect: { cooldown: -0.40, damage: 0.40 } },
-            { id: 'l_flm', name: '태양의 불꽃', rarity: 'legendary', targetType: 'flame', desc: '사거리 +80%, 공격력 +50%', effect: { range: 0.80, damage: 0.50 } }
+            { id: 'l_flm', name: '태양의 불꽃', rarity: 'legendary', targetType: 'flame', desc: '사거리 +80%, 공격력 +50%', effect: { range: 0.80, damage: 0.50 } },
+            { id: 'l_psn', name: '히드라의 맹독', rarity: 'legendary', targetType: 'poison', desc: '공격력 +100%, 지속시간 +50%', effect: { damage: 1.00, duration: 0.50 } }
         ];
 
-        let gameState = {
-            money: 300,
-            lives: 20,
-            wave: 1,
-            phase: 'SHOP',
-            isGameOver: false,
-            
-            enemies: [],
-            towers: [],
-            projectiles: [],
-            particles: [],
-            
-            shopItems: [],
-            selectedShopIdx: null,
-            selectedTower: null,
+        const TOWER_KEYS = Object.keys(TOWER_DATA);
 
-            draggingTower: null,
-            dragStartPos: { x: 0, y: 0 },
-            hasDragged: false,
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('start-wave-btn');
+        const speedBtn = document.getElementById('speed-btn');
+        const inventoryBtn = document.getElementById('inventory-btn');
+        const helpBtn = document.getElementById('help-btn'); // 도움말 버튼
+        const statsBtn = document.getElementById('stats-btn');
+        const soundBtn = document.getElementById('sound-btn');
+        const livesDisplay = document.getElementById('lives-display');
+        const moneyDisplay = document.getElementById('money-display');
+        const waveDisplay = document.getElementById('wave-display');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const artifactModal = document.getElementById('artifact-modal');
+        const artifactContainer = document.getElementById('artifact-container');
+        const inventoryModal = document.getElementById('inventory-modal');
+        const helpModal = document.getElementById('help-modal'); // 도움말 모달
+        const helpContent = document.getElementById('help-content');
+        const myArtifactList = document.getElementById('my-artifact-list');
+        const dpsPanel = document.getElementById('dps-panel');
+        const dpsList = document.getElementById('dps-list');
+        const shopContainer = document.getElementById('shop-container');
+        const phaseBadge = document.getElementById('phase-badge');
+        const phaseToast = document.getElementById('phase-toast');
+        const towerInfoPanel = document.getElementById('tower-info-panel');
+        const sellBtn = document.getElementById('sell-btn');
+        const rerollBtn = document.getElementById('reroll-btn');
 
-            spawnQueue: [],
-            spawnTimer: 0,
-            currentSpawnInterval: 0,
+        const BASE_WIDTH = 800;
+        const BASE_HEIGHT = 600;
+        const BASE_GRID_SIZE = 40;
+        const REROLL_COST = WAVE_DATA.rerollCost;
+        const TOWER_COST = WAVE_DATA.towerCost;
+        
+        let CANVAS_WIDTH = 800;
+        let CANVAS_HEIGHT = 600;
+        let gameSpeed = 1; 
 
-            globalBuffs: {
-                damage: 1.0,
-                range: 1.0,
-                cooldown: 1.0 
-            },
-            
-            collectedArtifacts: [],
-
-            statistics: {},
-            damageTexts: []
+        // ... (Sound Manager, Event Listeners for sound, etc. - unchanged) ...
+        // [중략] - 이전 코드의 Sound 객체 및 초기화 부분은 동일하게 사용
+        const Sound = {
+            ctx: null, muted: false,
+            init: function() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } if (this.ctx.state === 'suspended') { this.ctx.resume(); } },
+            toggleMute: function() { this.muted = !this.muted; soundBtn.innerText = this.muted ? '🔇' : '🔊'; return this.muted; },
+            playTone: function(freq, type, duration, vol = 0.05) { if (this.muted || !this.ctx) return; try { const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime); gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration); } catch(e) {} },
+            playNoise: function(duration, vol = 0.1) { if (this.muted || !this.ctx) return; try { const bufferSize = this.ctx.sampleRate * duration; const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; } const noise = this.ctx.createBufferSource(); noise.buffer = buffer; const gain = this.ctx.createGain(); gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration); noise.connect(gain); gain.connect(this.ctx.destination); noise.start(); } catch(e) {} },
+            shoot: () => Sound.playTone(600 + Math.random()*100, 'triangle', 0.1, 0.02),
+            laser: () => Sound.playTone(800, 'sawtooth', 0.15, 0.02),
+            flame: () => Sound.playNoise(0.1, 0.03),
+            poison: () => Sound.playNoise(0.2, 0.02),
+            hit: () => Sound.playTone(150, 'square', 0.05, 0.02),
+            crit: () => Sound.playTone(800, 'square', 0.1, 0.1), 
+            stun: () => Sound.playTone(200, 'sawtooth', 0.2, 0.05),
+            explode: () => { Sound.playNoise(0.3, 0.1); Sound.playTone(100, 'square', 0.2, 0.1); },
+            click: () => Sound.playTone(400, 'sine', 0.05, 0.05),
+            buy: () => Sound.playTone(1200, 'sine', 0.1, 0.05),
+            sell: () => Sound.playTone(300, 'sine', 0.1, 0.05),
+            reroll: () => Sound.playNoise(0.2, 0.05),
+            upgrade: () => { Sound.playTone(400, 'sine', 0.2, 0.1); setTimeout(()=>Sound.playTone(600, 'sine', 0.2, 0.1), 100); setTimeout(()=>Sound.playTone(800, 'sine', 0.4, 0.1), 200); },
+            gameOver: () => { Sound.playTone(300, 'sawtooth', 0.5, 0.1); setTimeout(()=>Sound.playTone(250, 'sawtooth', 0.5, 0.1), 400); setTimeout(()=>Sound.playTone(200, 'sawtooth', 1.0, 0.1), 800); }
         };
+        soundBtn.addEventListener('click', () => { Sound.init(); Sound.toggleMute(); });
+        document.body.addEventListener('click', () => Sound.init(), { once: true });
 
-        TOWER_KEYS.forEach(key => {
-            gameState.statistics[key] = { totalDamage: 0, currentDPS: 0, buffer: 0 };
-        });
+        // ... (Path, GameState, resize, utility functions unchanged) ...
+        const pathPoints = [{x: 0, y: 100}, {x: 220, y: 100}, {x: 220, y: 420}, {x: 500, y: 420}, {x: 500, y: 220}, {x: 700, y: 220}, {x: 700, y: 500}, {x: 800, y: 500}];
+        let gameState = { money: 300, lives: 20, wave: 1, phase: 'SHOP', isGameOver: false, enemies: [], towers: [], projectiles: [], particles: [], poisonPools: [], shopItems: [], selectedShopIdx: null, selectedTower: null, draggingTower: null, dragStartPos: { x: 0, y: 0 }, hasDragged: false, spawnQueue: [], spawnTimer: 0, currentSpawnInterval: 0, globalBuffs: { damage: 1.0, range: 1.0, cooldown: 1.0 }, collectedArtifacts: [], statistics: {}, damageTexts: [] };
+        TOWER_KEYS.forEach(key => { gameState.statistics[key] = { totalDamage: 0, currentDPS: 0, buffer: 0 }; });
 
-        // 초기화
-        function resize() {
-            const container = document.getElementById('game-container');
-            const targetRatio = BASE_WIDTH / BASE_HEIGHT;
-            const containerRatio = container.clientWidth / container.clientHeight;
-
-            if (containerRatio > targetRatio) {
-                CANVAS_HEIGHT = container.clientHeight;
-                CANVAS_WIDTH = CANVAS_HEIGHT * targetRatio;
-            } else {
-                CANVAS_WIDTH = container.clientWidth;
-                CANVAS_HEIGHT = CANVAS_WIDTH / targetRatio;
-            }
-
-            canvas.width = CANVAS_WIDTH;
-            canvas.height = CANVAS_HEIGHT;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
+        // [이하 함수들 동일하게 포함, 도움말 버튼 로직 추가]
+        function resize() { const container = document.getElementById('game-container'); const targetRatio = BASE_WIDTH / BASE_HEIGHT; const containerRatio = container.clientWidth / container.clientHeight; if (containerRatio > targetRatio) { CANVAS_HEIGHT = container.clientHeight; CANVAS_WIDTH = CANVAS_HEIGHT * targetRatio; } else { CANVAS_WIDTH = container.clientWidth; CANVAS_HEIGHT = CANVAS_WIDTH / targetRatio; } canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT; }
+        window.addEventListener('resize', resize); resize();
         function getScale() { return CANVAS_WIDTH / BASE_WIDTH; }
         function getGridSize() { return BASE_GRID_SIZE * getScale(); }
         function distance(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+        function distToSegmentSquared(p, v, w) { const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2); if (l2 == 0) return Math.pow(p.x - v.x, 2) + Math.pow(p.y - v.y, 2); let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2; t = Math.max(0, Math.min(1, t)); return Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2); }
+        function getPointerPos(e) { const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY }; }
+        function getSnappedPosition(x, y) { const gridSize = getGridSize(); const col = Math.floor(x / gridSize); const row = Math.floor(y / gridSize); return { x: col * gridSize + gridSize / 2, y: row * gridSize + gridSize / 2 }; }
+        function isValidPlacement(x, y, excludeTower = null) { const gridSize = getGridSize(); for (let i = 0; i < pathPoints.length - 1; i++) { const scale = getScale(); const p1 = {x: pathPoints[i].x*scale, y: pathPoints[i].y*scale}; const p2 = {x: pathPoints[i+1].x*scale, y: pathPoints[i+1].y*scale}; const distSq = distToSegmentSquared({x: x, y: y}, p1, p2); if (distSq < Math.pow(gridSize/2 + 5, 2)) return { valid: false, msg: "경로 위에는 배치할 수 없습니다." }; } for(const t of gameState.towers) { if (t === excludeTower) continue; if (distance(x, y, t.x, t.y) < gridSize/2) return { valid: false, msg: "이미 타워가 있는 위치입니다." }; } return { valid: true }; }
+
+        // Classes (PoisonPool, Projectile, FlameProjectile, Beam, Shockwave, SnowParticle, Particle, DamageText, Enemy, Tower)
+        // [중략] (모든 클래스 정의는 이전 코드와 동일하게 포함됨)
+        class PoisonPool { constructor(x, y, radius, damage, duration, color) { this.x = x; this.y = y; this.radius = radius; this.damage = damage; this.duration = duration; this.maxDuration = duration; this.color = color; this.tickTimer = 0; } update() { this.duration -= 1 * gameSpeed; this.tickTimer += 1 * gameSpeed; if (this.tickTimer >= 30) { const scale = getScale(); gameState.enemies.forEach(e => { if (distance(this.x, this.y, e.x, e.y) < this.radius * scale) { e.takeDamage(this.damage, 'poison'); } }); this.tickTimer = 0; } return this.duration <= 0; } draw() { const scale = getScale(); ctx.save(); ctx.globalAlpha = 0.6 * (this.duration / this.maxDuration); ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * scale, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#a7f3d0'; ctx.stroke(); if (Math.random() < 0.1) { ctx.fillStyle = 'white'; ctx.globalAlpha = 0.8; const bubbleX = this.x + (Math.random()-0.5) * this.radius * scale * 1.5; const bubbleY = this.y + (Math.random()-0.5) * this.radius * scale * 1.5; ctx.beginPath(); ctx.arc(bubbleX, bubbleY, 2*scale, 0, Math.PI*2); ctx.fill(); } ctx.restore(); } }
+        class Projectile { constructor(x, y, target, stats, level, typeKey) { this.x = x; this.y = y; this.target = target; this.damage = stats.damage; this.color = stats.color; this.isAoe = stats.aoe; this.slowFactor = stats.slowFactor; this.slowDuration = stats.slowDuration; this.speed = 10 * getScale(); this.radius = (3 + (level-1)) * getScale(); this.typeKey = typeKey; this.aoeRadius = (stats.aoeRadius || 60) * getScale(); this.tx = target.x; this.ty = target.y; this.isPoison = (typeKey === 'poison'); this.poolDuration = stats.duration; this.poolRadius = stats.poolRadius; this.isCrit = (Math.random() < (stats.critChance || 0)); this.critMultiplier = stats.critMultiplier || 1; this.stunDuration = stats.stunDuration || 0; } update() { if (gameState.enemies.includes(this.target)) { this.tx = this.target.x; this.ty = this.target.y; } const d = distance(this.x, this.y, this.tx, this.ty); const moveDist = this.speed * gameSpeed; if (d < moveDist) { const scale = getScale(); if (this.isPoison) { gameState.poisonPools.push(new PoisonPool(this.tx, this.ty, this.poolRadius, this.damage, this.poolDuration, this.color)); createParticles(this.tx, this.ty, 5, this.color); Sound.poison(); } else if (this.isAoe) { Sound.explode(); if (this.slowFactor) { gameState.particles.push(new Shockwave(this.x, this.y, this.aoeRadius, '#67e8f9')); for(let i=0; i<8; i++) { gameState.particles.push(new SnowParticle(this.x, this.y)); } } else { gameState.particles.push(new Shockwave(this.x, this.y, this.aoeRadius, this.color)); createParticles(this.x, this.y, 15, this.color); createParticles(this.x, this.y, 8, '#ffffff'); } gameState.enemies.forEach(e => { if (distance(this.x, this.y, e.x, e.y) < this.aoeRadius) { e.takeDamage(this.damage, this.typeKey); if (this.slowFactor) e.applySlow(this.slowFactor, this.slowDuration); } }); } else if (gameState.enemies.includes(this.target)) { let finalDamage = this.damage; if (this.isCrit) { finalDamage *= this.critMultiplier; Sound.crit(); gameState.damageTexts.push(new DamageText(this.x, this.y, "CRIT!", '#ef4444')); } if (this.stunDuration > 0) { this.target.applyStun(this.stunDuration); createParticles(this.x, this.y, 8, '#fcd34d'); Sound.stun(); } if (this.slowFactor) { this.target.applySlow(this.slowFactor, this.slowDuration); gameState.particles.push(new Shockwave(this.x, this.y, 20 * scale, '#67e8f9')); createParticles(this.x, this.y, 5, '#e0f2fe'); } else { createParticles(this.x, this.y, 3, this.color); } this.target.takeDamage(finalDamage, this.typeKey); } return true; } this.x += ((this.tx - this.x)/d)*moveDist; this.y += ((this.ty - this.y)/d)*moveDist; return false; } draw() { if (this.typeKey === 'basic') { ctx.fillStyle = '#60a5fa'; ctx.beginPath(); ctx.ellipse(this.x, this.y, this.radius*2, this.radius*0.8, Math.atan2(this.ty-this.y, this.tx-this.x), 0, Math.PI*2); ctx.fill(); return; } ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill(); } }
+        class FlameProjectile { constructor(x, y, angle, damage, range, color, typeKey, speedMultiplier = 1.0) { this.x = x; this.y = y; const speed = 6 * getScale() * speedMultiplier; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; this.damage = damage; this.life = range / speed; this.maxLife = this.life; this.color = color; this.hitList = []; this.radius = 2 * getScale(); this.typeKey = typeKey; } update() { this.x += this.vx * gameSpeed; this.y += this.vy * gameSpeed; this.life -= 1 * gameSpeed; const progress = 1 - (this.life / this.maxLife); this.radius = (3 + progress * 15) * getScale(); this.vx *= 0.98; this.vy *= 0.98; gameState.enemies.forEach(e => { if (e.health > 0 && !this.hitList.includes(e) && distance(this.x, this.y, e.x, e.y) < e.radius + this.radius) { e.takeDamage(this.damage, this.typeKey); this.hitList.push(e); } }); return this.life <= 0; } draw() { ctx.save(); const alpha = Math.max(0, this.life / this.maxLife); ctx.globalAlpha = alpha * 0.8; if (this.life > this.maxLife * 0.7) ctx.fillStyle = '#fef08a'; else if (this.life > this.maxLife * 0.4) ctx.fillStyle = '#fb923c'; else ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill(); ctx.restore(); } }
+        class Beam { constructor(x1, y1, x2, y2, color, width) { this.x1 = x1; this.y1 = y1; this.x2 = x2; this.y2 = y2; this.color = color; this.alpha = 1.0; this.width = width ? width * 0.6 : 5; } update() { this.alpha -= 0.1 * gameSpeed; this.width *= 0.8; return this.alpha <= 0; } draw() { ctx.save(); ctx.globalAlpha = this.alpha; ctx.strokeStyle = this.color; ctx.lineWidth = this.width * getScale(); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(this.x1, this.y1); ctx.lineTo(this.x2, this.y2); ctx.stroke(); ctx.shadowColor = this.color; ctx.shadowBlur = 10; ctx.strokeStyle = '#fff'; ctx.lineWidth = (this.width / 2) * getScale(); ctx.stroke(); ctx.restore(); } }
+        class Shockwave { constructor(x, y, maxRadius, color) { this.x = x; this.y = y; this.color = color; this.radius = 1; this.maxRadius = maxRadius; this.alpha = 0.8; } update() { this.radius += ((this.maxRadius - this.radius) * 0.2 + 2) * gameSpeed; this.alpha -= 0.06 * gameSpeed; return this.alpha <= 0; } draw() { ctx.save(); ctx.globalAlpha = Math.max(0, this.alpha); ctx.fillStyle = this.color; ctx.globalAlpha = Math.max(0, this.alpha * 0.3); ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = Math.max(0, this.alpha); ctx.strokeStyle = this.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); } }
+        class SnowParticle { constructor(x, y) { this.x = x; this.y = y; const angle = Math.random() * Math.PI * 2; const speed = (Math.random() * 2 + 1); this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; this.life = 1.0; this.decay = Math.random() * 0.02 + 0.01; this.size = Math.random() * 4 + 3; this.rotation = Math.random() * Math.PI; this.spin = (Math.random() - 0.5) * 0.2; this.color = '#e0f2fe'; } update() { this.x += this.vx * gameSpeed; this.y += this.vy * gameSpeed; this.rotation += this.spin * gameSpeed; this.life -= this.decay * gameSpeed; return this.life <= 0; } draw() { const scale = getScale(); ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation); ctx.globalAlpha = this.life; ctx.strokeStyle = '#bae6fd'; ctx.lineWidth = 2; const s = this.size * scale; ctx.beginPath(); ctx.moveTo(-s, 0); ctx.lineTo(s, 0); ctx.moveTo(0, -s); ctx.lineTo(0, s); const d = s * 0.7; ctx.moveTo(-d, -d); ctx.lineTo(d, d); ctx.moveTo(-d, d); ctx.lineTo(d, -d); ctx.stroke(); ctx.restore(); } }
+        class Particle { constructor(x, y, color) { this.x = x; this.y = y; this.color = color; const a = Math.random()*Math.PI*2, s = Math.random()*2+1; this.vx = Math.cos(a)*s; this.vy = Math.sin(a)*s; this.life = 1.0; this.decay = Math.random()*0.05+0.02; } update() { this.x+=this.vx * gameSpeed; this.y+=this.vy * gameSpeed; this.life-=this.decay * gameSpeed; return this.life<=0; } draw() { ctx.globalAlpha=this.life; ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; } }
+        class DamageText { constructor(x, y, damage, color) { this.x = x + (Math.random() - 0.5) * 20; this.y = y - 10; this.text = typeof damage === 'number' ? Math.round(damage) : damage; this.color = color; this.life = 1.0; this.vy = -1; } update() { this.y += this.vy * gameSpeed * 0.5; this.life -= 0.02 * gameSpeed; return this.life <= 0; } draw() { const scale = getScale(); ctx.save(); ctx.globalAlpha = Math.max(0, this.life); ctx.font = `bold ${14 * scale}px sans-serif`; ctx.textAlign = 'center'; ctx.lineWidth = 3 * scale; ctx.strokeStyle = 'black'; ctx.strokeText(this.text, this.x, this.y); ctx.fillStyle = this.color; ctx.fillText(this.text, this.x, this.y); ctx.restore(); } }
+        function createParticles(x, y, n, c) { for(let i=0;i<n;i++) gameState.particles.push(new Particle(x,y,c)); }
+        class Enemy { constructor(wave, typeKey = 'NORMAL') { this.pathIndex = 0; const typeInfo = ENEMY_DATA[typeKey]; this.typeKey = typeKey; this.name = typeInfo.name; const scale = getScale(); this.x = pathPoints[0].x * scale; this.y = pathPoints[0].y * scale; this.radius = typeInfo.radius * scale; let speedWave = Math.min(wave, 40); this.baseSpeed = (typeInfo.speed + (speedWave * 0.05)) * scale; this.speed = this.baseSpeed; let growthRate = WAVE_DATA.hpCompoundRate.early; if (wave > 40) growthRate = WAVE_DATA.hpCompoundRate.late; else if (wave > 25) growthRate = WAVE_DATA.hpCompoundRate.mid; const baseHp = (WAVE_DATA.baseHp + (wave * WAVE_DATA.hpGrowthBase)) * Math.pow(growthRate, wave - 1); this.maxHealth = baseHp * typeInfo.hpMod; this.health = this.maxHealth; this.color = typeInfo.color; this.reward = typeInfo.reward + Math.floor(wave * WAVE_DATA.rewardGrowth); this.slowTimer = 0; this.inPoison = false; this.stunTimer = 0; this.stunImmunityTimer = 0; } update() { if (this.stunTimer > 0) { this.stunTimer -= 1 * gameSpeed; if (this.stunTimer <= 0) this.stunImmunityTimer = 60; return false; } if (this.stunImmunityTimer > 0) this.stunImmunityTimer -= 1 * gameSpeed; if (this.slowTimer > 0) { this.slowTimer -= 1 * gameSpeed; if (this.slowTimer <= 0) this.speed = this.baseSpeed; } const scale = getScale(); const target = pathPoints[this.pathIndex + 1]; if (!target) return true; const tx = target.x * scale, ty = target.y * scale; const dist = Math.hypot(tx - this.x, ty - this.y); const moveDist = this.speed * gameSpeed; if (dist < moveDist) { this.x = tx; this.y = ty; this.pathIndex++; if (this.pathIndex >= pathPoints.length - 1) return true; } else { this.x += ((tx - this.x) / dist) * moveDist; this.y += ((ty - this.y) / dist) * moveDist; } this.inPoison = false; return false; } applySlow(factor, duration) { if (this.slowTimer <= 0 || this.speed > this.baseSpeed * factor) { this.speed = this.baseSpeed * factor; this.slowTimer = duration; } else { this.slowTimer = Math.max(this.slowTimer, duration); } } applyStun(duration) { if (this.stunImmunityTimer > 0 || this.stunTimer > 0) return; this.stunTimer = duration; } draw() { const scale = getScale(); const hpPercent = Math.max(0, this.health / this.maxHealth); const barWidth = 30 * scale; const barHeight = 4 * scale; const barX = this.x - barWidth / 2; const barY = this.y - this.radius - 8 * scale; ctx.fillStyle = '#ef4444'; ctx.fillRect(barX, barY, barWidth, barHeight); ctx.fillStyle = '#22c55e'; ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight); ctx.strokeStyle = this.slowTimer > 0 ? '#22d3ee' : '#fff'; if (this.inPoison) ctx.strokeStyle = '#a855f7'; if (this.stunTimer > 0) ctx.strokeStyle = '#facc15'; ctx.lineWidth = this.slowTimer > 0 || this.inPoison || this.stunTimer > 0 ? 3 : 2; if (this.typeKey === 'BOSS') { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 10; } ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0; if (this.stunTimer > 0) { ctx.fillStyle = '#fff'; ctx.font = `${12*scale}px Arial`; ctx.fillText('⚡', this.x, this.y); } else if (this.slowTimer > 0) { ctx.fillStyle = '#fff'; ctx.font = `${10*scale}px Arial`; ctx.fillText('❄️', this.x-6*scale, this.y-this.radius-15*scale); } if (this.inPoison) { ctx.fillStyle = '#a855f7'; ctx.font = `${10*scale}px Arial`; ctx.fillText('☠️', this.x+6*scale, this.y-this.radius-15*scale); } } takeDamage(amount, sourceType) { if (this.health <= 0) return false; let finalDamage = amount; if (this.inPoison) finalDamage *= 1.25; this.health -= finalDamage; if (sourceType && gameState.statistics[sourceType]) { gameState.statistics[sourceType].totalDamage += finalDamage; gameState.statistics[sourceType].buffer += finalDamage; } if (sourceType && TOWER_DATA[sourceType]) { gameState.damageTexts.push(new DamageText(this.x, this.y, finalDamage, TOWER_DATA[sourceType].color)); } if (this.health <= 0) { gameState.money += this.reward; updateUI(); createParticles(this.x, this.y, 5, '#ef4444'); return true; } if(Math.random() < 0.2) Sound.hit(); return false; } }
 
-        function distToSegmentSquared(p, v, w) {
-            const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
-            if (l2 == 0) return Math.pow(p.x - v.x, 2) + Math.pow(p.y - v.y, 2);
-            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-            t = Math.max(0, Math.min(1, t));
-            return Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2);
-        }
-
-        function getPointerPos(e) {
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY
-            };
-        }
-
-        function getSnappedPosition(x, y) {
-            const gridSize = getGridSize();
-            const col = Math.floor(x / gridSize);
-            const row = Math.floor(y / gridSize);
-            return {
-                x: col * gridSize + gridSize / 2,
-                y: row * gridSize + gridSize / 2
-            };
-        }
-
-        function isValidPlacement(x, y, excludeTower = null) {
-            const gridSize = getGridSize();
-
-            let onPath = false;
-            for (let i = 0; i < pathPoints.length - 1; i++) {
-                const scale = getScale();
-                const p1 = {x: pathPoints[i].x*scale, y: pathPoints[i].y*scale};
-                const p2 = {x: pathPoints[i+1].x*scale, y: pathPoints[i+1].y*scale};
-                
-                const distSq = distToSegmentSquared({x: x, y: y}, p1, p2);
-                
-                if (distSq < Math.pow(gridSize/2 + 5, 2)) {
-                    return { valid: false, msg: "경로 위에는 배치할 수 없습니다." };
-                }
-            }
-
-            for(const t of gameState.towers) {
-                if (t === excludeTower) continue; 
-                if (distance(x, y, t.x, t.y) < gridSize/2) {
-                    return { valid: false, msg: "이미 타워가 있는 위치입니다." };
-                }
-            }
-
-            return { valid: true };
-        }
-
-        function generateShop() {
-            gameState.shopItems = [];
-            let maxLevelFound = 1;
-
-            for (let i = 0; i < 5; i++) {
-                const randomKey = TOWER_KEYS[Math.floor(Math.random() * TOWER_KEYS.length)];
-                
-                let level = 1;
-                let cost = TOWER_COST; 
-                const rand = Math.random();
-
-                if (gameState.wave >= 25) {
-                    if (rand < 0.10) { 
-                        level = 3; cost = 700;
-                    } else if (rand < 0.40) { 
-                        level = 2; cost = 250;
-                    }
-                } else if (gameState.wave >= 15) {
-                    if (rand < 0.20) {
-                        level = 2; cost = 250;
-                    }
-                }
-
-                if (level > maxLevelFound) maxLevelFound = level;
-
-                gameState.shopItems.push({
-                    typeKey: randomKey,
-                    id: Date.now() + i,
-                    bought: false,
-                    level: level,
-                    cost: cost
-                });
-            }
-
-            if (maxLevelFound === 3) {
-                triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#f97316', 50); 
-            } else if (maxLevelFound === 2) {
-                triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#d946ef', 30); 
-            }
-
-            gameState.selectedShopIdx = null;
-            renderShopUI();
-        }
-
-        function triggerUIExplosion(x, y, color, count = 30) {
-            const layer = document.getElementById('ui-effect-layer');
-            
-            for (let i = 0; i < count; i++) {
-                const p = document.createElement('div');
-                p.classList.add('ui-particle');
-                
-                const size = Math.random() * 6 + 4;
-                p.style.width = `${size}px`;
-                p.style.height = `${size}px`;
-                p.style.backgroundColor = color;
-                
-                p.style.left = `${x}px`;
-                p.style.top = `${y}px`;
-                p.style.transform = `translate(-50%, -50%)`; 
-                
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = Math.random() * 150 + 50;
-                
-                p.style.transition = `all ${0.5 + Math.random()*0.5}s ease-out`;
-                
-                layer.appendChild(p);
-
-                p.offsetHeight;
-
-                requestAnimationFrame(() => {
-                    p.style.transform = `translate(${Math.cos(angle) * velocity}px, ${Math.sin(angle) * velocity}px) scale(0)`;
-                    p.style.opacity = '0';
-                });
-
-                setTimeout(() => p.remove(), 1000);
-            }
-        }
-
-        function showArtifactSelection() {
-            artifactContainer.innerHTML = '';
-            
-            const availableArtifacts = ARTIFACTS.filter(art => !gameState.collectedArtifacts.includes(art.id));
-            
-            if (availableArtifacts.length === 0) {
-                showToast("모든 유물을 획득했습니다!");
-                setPhase('SHOP');
-                return;
-            }
-
-            const options = [];
-            const pickCount = Math.min(3, availableArtifacts.length);
-            
-            let maxRarityFound = 'common';
-
-            for(let i=0; i<pickCount; i++) {
-                const currentPool = availableArtifacts.filter(a => !options.includes(a));
-                if (currentPool.length === 0) break;
-
-                let selected = null;
-                for(let attempt=0; attempt<20; attempt++) {
-                    const rand = Math.random();
-                    let targetRarity;
-                    if (rand < 0.05) targetRarity = 'legendary';
-                    else if (rand < 0.20) targetRarity = 'epic';
-                    else if (rand < 0.50) targetRarity = 'rare';
-                    else targetRarity = 'common';
-
-                    const candidates = currentPool.filter(a => a.rarity === targetRarity);
-                    if (candidates.length > 0) {
-                        selected = candidates[Math.floor(Math.random() * candidates.length)];
-                        break;
-                    }
-                }
-                if (!selected) {
-                    selected = currentPool[Math.floor(Math.random() * currentPool.length)];
-                }
-                options.push(selected);
-
-                if (selected.rarity === 'legendary') maxRarityFound = 'legendary';
-                else if (selected.rarity === 'epic' && maxRarityFound !== 'legendary') maxRarityFound = 'epic';
-            }
-
-            if (maxRarityFound === 'legendary') {
-                setTimeout(() => triggerUIExplosion(window.innerWidth/2, window.innerHeight/2, '#f97316', 100), 200);
-            } else if (maxRarityFound === 'epic') {
-                setTimeout(() => triggerUIExplosion(window.innerWidth/2, window.innerHeight/2, '#d946ef', 60), 200);
-            }
-
-            options.forEach(art => {
-                const card = document.createElement('div');
-                let rarityClass = `rarity-${art.rarity}`;
-                let rarityName = art.rarity === 'common' ? '일반' : art.rarity === 'rare' ? '희귀' : art.rarity === 'epic' ? '서사' : '전설';
-                let rarityColor = art.rarity === 'common' ? 'text-gray-400' : art.rarity === 'rare' ? 'text-blue-400' : art.rarity === 'epic' ? 'text-pink-400' : 'text-orange-400';
-                
-                let targetText = "전체 적용";
-                let targetClass = "text-gray-500";
-                if (art.targetType !== 'all') {
-                    const towerName = TOWER_TYPES[art.targetType].name;
-                    targetText = `${towerName} 전용`;
-                    targetClass = "text-green-400 font-bold";
-                }
-
-                card.className = `artifact-card bg-gray-800 border-2 rounded-xl p-6 flex flex-col items-center justify-between w-full md:w-1/3 h-72 ${rarityClass}`;
-                card.innerHTML = `
-                    <div class="flex flex-col items-center w-full">
-                        <div class="flex justify-between w-full text-xs mb-2">
-                            <span class="${rarityColor} font-bold">[${rarityName}]</span>
-                            <span class="${targetClass}">${targetText}</span>
-                        </div>
-                        <div class="text-2xl font-bold text-white mb-4 text-center break-keep leading-tight">${art.name}</div>
-                        <div class="text-gray-300 text-center mb-4 break-keep text-sm h-12 flex items-center justify-center">${art.desc}</div>
-                    </div>
-                    <button class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-bold w-full transition">선택</button>
-                `;
-                
-                card.onclick = () => selectArtifact(art);
-                artifactContainer.appendChild(card);
-            });
-
-            artifactModal.classList.remove('hidden');
-        }
-
-        function selectArtifact(artifact) {
-            gameState.collectedArtifacts.push(artifact.id);
-
-            if (artifact.targetType === 'all') {
-                if (artifact.effect.damage) gameState.globalBuffs.damage += artifact.effect.damage;
-                if (artifact.effect.range) gameState.globalBuffs.range += artifact.effect.range;
-                if (artifact.effect.cooldown) gameState.globalBuffs.cooldown *= (1 + artifact.effect.cooldown);
-            }
-
-            gameState.towers.forEach(t => t.recalculateStats());
-
-            artifactModal.classList.add('hidden');
-            showToast(`${artifact.name} 획득!`);
-            setPhase('SHOP');
-        }
-
-        inventoryBtn.addEventListener('click', () => {
-            renderInventory();
-            inventoryModal.classList.remove('hidden');
-        });
-
-        statsBtn.addEventListener('click', () => {
-            dpsPanel.classList.toggle('hidden');
-        });
-
-        function renderInventory() {
-            myArtifactList.innerHTML = '';
-            
-            if (gameState.collectedArtifacts.length === 0) {
-                myArtifactList.innerHTML = '<div class="text-gray-500 text-center col-span-full py-10">아직 획득한 유물이 없습니다.</div>';
-                return;
-            }
-
-            gameState.collectedArtifacts.forEach(id => {
-                const art = ARTIFACTS.find(a => a.id === id);
-                if (!art) return;
-
-                const item = document.createElement('div');
-                let rarityColor = art.rarity === 'common' ? 'border-gray-400' : art.rarity === 'rare' ? 'border-blue-400' : art.rarity === 'epic' ? 'border-pink-400' : 'border-orange-400';
-                
-                let targetText = "전체 적용";
-                let targetClass = "text-gray-400";
-                if (art.targetType !== 'all') {
-                    const towerName = TOWER_TYPES[art.targetType].name;
-                    targetText = `${towerName} 전용`;
-                    targetClass = "text-green-400 font-bold";
-                }
-
-                item.className = `my-artifact-item bg-gray-700 p-3 rounded shadow ${rarityColor} flex flex-col gap-1`;
-                item.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <span class="font-bold text-sm text-gray-200">${art.name}</span>
-                        <span class="text-[10px] ${targetClass} bg-black/30 px-1 rounded whitespace-nowrap ml-2">${targetText}</span>
-                    </div>
-                    <div class="text-xs text-gray-400">${art.desc}</div>
-                `;
-                myArtifactList.appendChild(item);
-            });
-        }
-
-        speedBtn.addEventListener('click', () => {
-            if (gameSpeed === 1) gameSpeed = 2;
-            else if (gameSpeed === 2) gameSpeed = 4;
-            else gameSpeed = 1;
-            
-            speedBtn.innerText = `⏩ ${gameSpeed}x`;
-        });
-
-        function rerollShop() {
-            if (gameState.phase !== 'SHOP') return;
-            if (gameState.money < REROLL_COST) {
-                showToast("돈이 부족합니다!", "bg-red-600");
-                return;
-            }
-            gameState.money -= REROLL_COST;
-            updateUI();
-            generateShop();
-            createParticles(canvas.width/2, canvas.height + 50, 20, '#a855f7');
-        }
-
-        rerollBtn.addEventListener('click', rerollShop);
-
-        function renderShopUI() {
-            shopContainer.innerHTML = '';
-            gameState.shopItems.forEach((item, idx) => {
-                const btn = document.createElement('button');
-                
-                let borderClass = 'border-gray-600'; 
-                if (item.level === 2) borderClass = 'border-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.3)]'; 
-                if (item.level === 3) borderClass = 'border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]'; 
-
-                let baseClass = `shop-card relative w-24 sm:w-32 h-36 sm:h-44 bg-gray-800 rounded-xl flex flex-col items-center justify-center p-2 group shrink-0 border-2 transition-all duration-200`;
-                
-                if (gameState.selectedShopIdx === idx) {
-                    baseClass += ` border-blue-500 bg-gray-700 shadow-[0_0_15px_rgba(59,130,246,0.6)] transform -translate-y-2`;
-                } else {
-                    baseClass += ` ${borderClass}`;
-                }
-
-                btn.className = baseClass;
-                
-                if (item.bought) {
-                    btn.disabled = true;
-                    btn.innerHTML = `<span class="text-red-500 font-bold text-lg sm:text-xl rotate-[-15deg] border-2 border-red-500 px-2 rounded">SOLD</span>`;
-                    btn.className = `shop-card relative w-24 sm:w-32 h-36 sm:h-44 bg-gray-800 rounded-xl flex flex-col items-center justify-center p-2 group shrink-0 border-2 border-gray-700 opacity-50 cursor-not-allowed filter grayscale`;
-                } else {
-                    const info = TOWER_TYPES[item.typeKey];
-                    let iconShape = '';
-                    if (info.shape === 'circle') iconShape = 'rounded-full';
-                    else if (info.shape === 'square') iconShape = 'rounded-none rotate-45';
-                    else if (info.shape === 'ring') iconShape = 'rounded-full border-4 border-current';
-                    else if (info.shape === 'snowflake') iconShape = 'rounded-sm border border-white';
-                    else if (info.shape === 'triangle') iconShape = 'w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[24px]';
-                    else iconShape = 'rounded-md';
-
-                    let iconStyle = `background-color: ${info.color}; box-shadow: 0 0 10px ${info.color};`;
-                    if (info.shape === 'triangle') iconStyle = `border-bottom-color: ${info.color}; filter: drop-shadow(0 0 5px ${info.color}); background-color: transparent; box-shadow: none;`;
-
-                    const stars = "★".repeat(item.level);
-                    const starColor = item.level === 1 ? "text-gray-500" : (item.level === 2 ? "text-pink-400" : "text-orange-400");
-                    const nameColor = item.level === 1 ? "text-white" : (item.level === 2 ? "text-pink-200" : "text-orange-200");
-
-                    btn.innerHTML = `
-                        <div class="w-8 h-8 sm:w-12 sm:h-12 ${iconShape} mb-2 sm:mb-3 shadow-lg transition-transform group-hover:scale-110" style="${iconStyle}"></div>
-                        <div class="font-bold text-xs sm:text-sm text-center leading-tight mb-1 truncate w-full ${nameColor}">${info.name}</div>
-                        <div class="text-yellow-400 font-mono text-xs sm:text-sm">💰${item.cost}</div>
-                        <div class="text-[10px] ${starColor} mt-1 font-bold tracking-widest">${stars}</div>
-                        
-                        <div class="absolute bottom-full mb-2 bg-black text-xs text-white p-2 rounded w-40 hidden md:block group-hover:block z-50 pointer-events-none text-left border border-gray-700">
-                            <span class="font-bold ${nameColor}">${info.name}</span> <span class="${starColor}">(${item.level}성)</span><br>
-                            공격력: ${Math.round(info.damage * Math.pow(2, item.level-1))}<br>
-                            사거리: ${Math.round(info.range * (1 + (item.level-1)*0.2))}
-                        </div>
-                    `;
-                    
-                    if (gameState.money < item.cost) {
-                        btn.classList.add('opacity-50');
-                    }
-                    btn.onclick = () => selectShopItem(idx);
-                }
-                shopContainer.appendChild(btn);
-            });
-        }
-
-        function selectShopItem(idx) {
-            if (gameState.phase !== 'SHOP') return;
-            if (gameState.selectedShopIdx === idx) {
-                gameState.selectedShopIdx = null;
-            } else {
-                const item = gameState.shopItems[idx];
-                if (gameState.money < item.cost) { 
-                    showToast("돈이 부족합니다!", "bg-red-600");
-                    return;
-                }
-                gameState.selectedShopIdx = idx;
-                deselectTowerOnMap();
-            }
-            renderShopUI();
-        }
-
-        function deselectTowerOnMap() {
-            gameState.selectedTower = null;
-            towerInfoPanel.classList.add('hidden');
-        }
-
-        function showToast(msg, bgClass="bg-blue-600") {
-            phaseToast.textContent = msg;
-            phaseToast.className = `absolute top-4 left-1/2 transform -translate-x-1/2 text-white px-6 py-2 rounded-full shadow-xl z-40 font-bold phase-toast ${bgClass} whitespace-nowrap`;
-            phaseToast.classList.remove('hidden');
-            
-            phaseToast.style.animation = 'none';
-            phaseToast.offsetHeight;
-            phaseToast.style.animation = null;
-
-            setTimeout(() => {
-                phaseToast.classList.add('hidden');
-            }, 2500);
-        }
-
-        function setPhase(newPhase) {
-            gameState.phase = newPhase;
-            const badge = document.getElementById('phase-badge');
-            
-            if (newPhase === 'SHOP') {
-                badge.textContent = "상점 단계";
-                badge.className = "text-xs font-bold text-blue-400 mt-1 uppercase tracking-wider";
-                startBtn.classList.remove('hidden');
-                shopContainer.parentElement.classList.remove('opacity-50', 'pointer-events-none');
-                rerollBtn.disabled = false;
-                
-                showToast(`🏪 웨이브 ${gameState.wave} 상점 오픈!`);
-                
-            } else if (newPhase === 'BATTLE') {
-                badge.textContent = "전투 단계";
-                badge.className = "text-xs font-bold text-red-500 mt-1 uppercase tracking-wider";
-                startBtn.classList.add('hidden');
-                shopContainer.parentElement.classList.add('opacity-50', 'pointer-events-none');
-                rerollBtn.disabled = true;
-                
-                gameState.selectedShopIdx = null;
-                deselectTowerOnMap();
-                renderShopUI();
-                
-                showToast(`⚔️ 웨이브 ${gameState.wave} 전투 시작!`, "bg-red-600");
-                spawnWave();
-            }
-        }
-
-        startBtn.addEventListener('click', () => {
-            if (gameState.phase === 'SHOP') setPhase('BATTLE');
-        });
-
-        function checkAndMerge(newTower) {
-            const sameTowers = gameState.towers.filter(t => t.typeKey === newTower.typeKey && t.level === newTower.level);
-            
-            if (sameTowers.length >= 3) {
-                // [수정] 5성까지 합체 허용
-                if (newTower.level >= 5) {
-                    showToast("최고 레벨입니다!", "bg-yellow-500");
-                    return;
-                }
-                const targets = sameTowers.slice(0, 3);
-                gameState.towers = gameState.towers.filter(t => !targets.includes(t));
-                targets.forEach(t => createParticles(t.x, t.y, 10, '#fff'));
-
-                const centerTower = targets.includes(newTower) ? newTower : targets[targets.length-1];
-                const upgradedTower = new Tower(centerTower.x, centerTower.y, centerTower.typeKey);
-                upgradedTower.level = centerTower.level + 1;
-                upgradedTower.recalculateStats();
-
-                gameState.towers.push(upgradedTower);
-                
-                // [수정] 이펙트 차별화
-                let particleColor = '#fbbf24'; // 3성까지 기본 금색
-                if (upgradedTower.level === 4) particleColor = '#a855f7'; // 4성 보라
-                if (upgradedTower.level === 5) particleColor = '#ef4444'; // 5성 빨강
-
-                createParticles(centerTower.x, centerTower.y, 30, particleColor);
-                showToast(`🎉 ${TOWER_TYPES[upgradedTower.typeKey].name} ${upgradedTower.level}성 합체 성공!`, "bg-yellow-600");
-
-                setTimeout(() => checkAndMerge(upgradedTower), 300);
-            }
-        }
-
-        class Enemy {
-            constructor(wave, typeKey = 'NORMAL') {
-                this.pathIndex = 0;
-                
-                const typeInfo = ENEMY_TYPES[typeKey];
-                this.typeKey = typeKey;
-                this.name = typeInfo.name;
-
-                const scale = getScale();
-                this.x = pathPoints[0].x * scale;
-                this.y = pathPoints[0].y * scale;
-                this.radius = typeInfo.radius * scale;
-                
-                this.baseSpeed = (typeInfo.speed + (wave * 0.05)) * scale; 
-                this.speed = this.baseSpeed;
-                
-                // [수정] 후반 난이도 스케일링 강화
-                let growthRate = 1.035;
-                if (wave > 40) growthRate = 1.10;
-                else if (wave > 25) growthRate = 1.06;
-
-                const baseHp = (100 + (wave * 40)) * Math.pow(growthRate, wave - 1);
-                
-                this.maxHealth = baseHp * typeInfo.hpMod; 
-                this.health = this.maxHealth;
-                
-                this.color = typeInfo.color;
-                this.reward = typeInfo.reward + Math.floor(wave * 1.0);
-                this.slowTimer = 0;
-            }
-            update() {
-                if (this.slowTimer > 0) {
-                    this.slowTimer -= 1 * gameSpeed;
-                    if (this.slowTimer <= 0) this.speed = this.baseSpeed;
-                }
-                const scale = getScale();
-                const target = pathPoints[this.pathIndex + 1];
-                if (!target) return true;
-                const tx = target.x * scale, ty = target.y * scale;
-                const dist = Math.hypot(tx - this.x, ty - this.y);
-                const moveDist = this.speed * gameSpeed; 
-
-                if (dist < moveDist) {
-                    this.x = tx; this.y = ty; this.pathIndex++;
-                    if (this.pathIndex >= pathPoints.length - 1) return true;
-                } else {
-                    this.x += ((tx - this.x) / dist) * moveDist;
-                    this.y += ((ty - this.y) / dist) * moveDist;
-                }
-                return false;
-            }
-            applySlow(factor, duration) {
-                if (this.slowTimer <= 0 || this.speed > this.baseSpeed * factor) {
-                    this.speed = this.baseSpeed * factor;
-                    this.slowTimer = duration;
-                } else {
-                    this.slowTimer = Math.max(this.slowTimer, duration);
-                }
-            }
-            draw() {
-                const scale = getScale();
-                const hpPercent = Math.max(0, this.health / this.maxHealth);
-
-                const barWidth = 30 * scale;
-                const barHeight = 4 * scale;
-                const barX = this.x - barWidth / 2;
-                const barY = this.y - this.radius - 8 * scale;
-
-                ctx.fillStyle = '#ef4444';
-                ctx.fillRect(barX, barY, barWidth, barHeight);
-                ctx.fillStyle = '#22c55e';
-                ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
-
-                ctx.strokeStyle = this.slowTimer > 0 ? '#22d3ee' : '#fff';
-                ctx.lineWidth = this.slowTimer > 0 ? 3 : 2;
-                
-                if (this.typeKey === 'BOSS') {
-                    ctx.shadowColor = '#ef4444';
-                    ctx.shadowBlur = 10;
-                }
-
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color; 
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.shadowBlur = 0; 
-
-                if (this.slowTimer > 0) {
-                    ctx.fillStyle = '#fff';
-                    ctx.font = `${10*scale}px Arial`;
-                    ctx.fillText('❄️', this.x-6*scale, this.y-this.radius-15*scale); 
-                }
-            }
-            takeDamage(amount, sourceType) {
-                if (this.health <= 0) return false; 
-                this.health -= amount;
-                
-                if (sourceType && gameState.statistics[sourceType]) {
-                    gameState.statistics[sourceType].totalDamage += amount;
-                    gameState.statistics[sourceType].buffer += amount;
-                }
-
-                if (sourceType && TOWER_TYPES[sourceType]) {
-                    gameState.damageTexts.push(new DamageText(this.x, this.y, amount, TOWER_TYPES[sourceType].color));
-                }
-
-                if (this.health <= 0) {
-                    gameState.money += this.reward;
-                    updateUI();
-                    createParticles(this.x, this.y, 5, '#ef4444');
-                    return true;
-                }
-                return false;
-            }
-        }
 
         class Tower {
             constructor(x, y, typeKey) {
-                this.x = x; this.y = y; this.typeKey = typeKey;
+                this.x = x;
+                this.y = y;
+                this.typeKey = typeKey;
                 this.level = 1;
-                this.stats = { ...TOWER_TYPES[typeKey] };
-                this.recalculateStats(); 
-                this.lastShot = 0; this.angle = 0;
+                this.stats = { ...TOWER_DATA[typeKey]
+                };
+                this.recalculateStats();
+                this.lastShot = 0;
+                this.angle = 0;
             }
+
             recalculateStats() {
-                const base = TOWER_TYPES[this.typeKey];
-                
-                // [수정] 성급별 스탯 배율 (4성, 5성 강화)
-                // 기존: 2^(level-1)
-                // 4성: 8배 -> 10배 (보너스)
-                // 5성: 16배 -> 25배 (폭발적 성장)
+                const base = TOWER_DATA[this.typeKey];
                 let multiplier = Math.pow(2, this.level - 1);
-                if (this.level === 4) multiplier = 10; 
-                if (this.level === 5) multiplier = 25; 
-                
+                if (this.level === 4) multiplier = 10;
+                if (this.level === 5) multiplier = 25;
+
+                let rangeMultiplierByLevel = 1;
+                if (this.level === 3) rangeMultiplierByLevel = 1.1;
+                if (this.level === 4) rangeMultiplierByLevel = 1.15;
+                if (this.level === 5) rangeMultiplierByLevel = 1.2;
+
                 let damageMult = gameState.globalBuffs.damage;
                 let rangeMult = gameState.globalBuffs.range;
                 let cooldownMult = gameState.globalBuffs.cooldown;
+                let critChanceAdd = 0;
+                let slowFactorAdd = 0;
+                let slowDurationAdd = 0;
 
                 gameState.collectedArtifacts.forEach(artId => {
-                    const art = ARTIFACTS.find(a => a.id === artId);
-                    if (art && art.targetType === this.typeKey) {
+                    const art = ARTIFACT_DATA.find(a => a.id === artId);
+                    if (art && (art.targetType === 'all' || art.targetType === this.typeKey)) {
                         if (art.effect.damage) damageMult += art.effect.damage;
                         if (art.effect.range) rangeMult += art.effect.range;
                         if (art.effect.cooldown) cooldownMult *= (1 + art.effect.cooldown);
+                        if (art.effect.critChance) critChanceAdd += art.effect.critChance;
+                        if (art.effect.slowFactor) slowFactorAdd += art.effect.slowFactor;
+                        if (art.effect.slowDuration) slowDurationAdd += art.effect.slowDuration;
                     }
                 });
 
-                let rangeGrowth = 0.2; 
-                if (this.typeKey === 'ice') rangeGrowth = 0.3; 
-                if (this.typeKey === 'laser') rangeGrowth = 0.4; 
-                if (this.typeKey === 'aoe') rangeGrowth = 0.3; 
-
                 this.stats.damage = base.damage * multiplier * damageMult;
-                this.stats.range = base.range * (1 + (this.level - 1) * rangeGrowth) * rangeMult;
+                this.stats.range = base.range * rangeMult * rangeMultiplierByLevel;
                 this.stats.cooldown = base.cooldown * cooldownMult;
+                this.stats.critChance = (base.critChance || 0) + critChanceAdd;
+
+                if (this.typeKey === 'sniper') {
+                    if (this.level === 1) this.stats.critMultiplier = 1.5;
+                    else if (this.level === 2) this.stats.critMultiplier = 2.0;
+                    else if (this.level === 3) this.stats.critMultiplier = 2.5;
+                    else if (this.level === 4) this.stats.critMultiplier = 3.0;
+                    else this.stats.critMultiplier = 4.0;
+                }
+
+                if (this.typeKey === 'basic') {
+                    const stuns = [12, 18, 24, 36, 48];
+                    this.stats.stunDuration = stuns[this.level - 1] || 12;
+                }
 
                 if (this.typeKey === 'aoe') {
                     this.stats.aoeRadius = 60 * (1 + (this.level - 1) * 0.6);
                 }
+
                 if (this.typeKey === 'laser') {
                     this.stats.laserWidth = 10 + (this.level - 1) * 20;
                 }
-                
+
                 if (this.typeKey === 'ice') {
                     if (this.level === 1) {
-                        this.stats.aoe = false; 
+                        this.stats.aoe = false;
                     } else if (this.level === 2) {
                         this.stats.aoe = true;
-                        this.stats.aoeRadius = 40; 
+                        this.stats.aoeRadius = 40;
                     } else {
                         this.stats.aoe = true;
-                        this.stats.aoeRadius = 70; 
+                        this.stats.aoeRadius = 70;
                     }
+                    this.stats.slowFactor = (base.slowFactor || 0.5) + slowFactorAdd;
+                    this.stats.slowDuration = (base.slowDuration || 90) * (1 + slowDurationAdd);
+                }
+
+                if (this.typeKey === 'poison') {
+                    this.stats.duration = (base.duration || 120) * (1 + (this.level - 1) * 0.2);
+                    this.stats.poolRadius = (base.poolRadius || 40) * (1 + (this.level - 1) * 0.2);
                 }
             }
+
             update(enemies) {
-                this.lastShot += 1 * gameSpeed; 
+                this.lastShot += 1 * gameSpeed;
                 if (this.lastShot < this.stats.cooldown) return;
+
                 const scale = getScale();
                 const range = this.stats.range * scale;
-                
+
+                // --- 레이저 타워 로직 ---
                 if (this.typeKey === 'laser') {
                     let target = null;
                     let maxProg = -1;
-                    
                     for (const e of enemies) {
                         if (e.health <= 0) continue;
                         const d = distance(this.x, this.y, e.x, e.y);
                         if (d <= range) {
-                            const prog = e.pathIndex * 1000 + (1000 - distance(e.x, e.y, pathPoints[e.pathIndex+1].x*scale, pathPoints[e.pathIndex+1].y*scale));
-                            if (prog > maxProg) { maxProg = prog; target = e; }
+                            const prog = e.pathIndex * 1000 + (1000 - distance(e.x, e.y, pathPoints[e.pathIndex + 1].x * scale, pathPoints[e.pathIndex + 1].y * scale));
+                            if (prog > maxProg) {
+                                maxProg = prog;
+                                target = e;
+                            }
                         }
                     }
 
@@ -1115,12 +515,21 @@
                         this.angle = Math.atan2(target.y - this.y, target.x - this.x);
                         const endX = this.x + Math.cos(this.angle) * range;
                         const endY = this.y + Math.sin(this.angle) * range;
-                        
                         const beamWidth = this.stats.laserWidth || 10;
+                        Sound.laser();
 
                         enemies.forEach(e => {
                             if (e.health <= 0) return;
-                            const distSq = distToSegmentSquared({x: e.x, y: e.y}, {x: this.x, y: this.y}, {x: endX, y: endY});
+                            const distSq = distToSegmentSquared({
+                                x: e.x,
+                                y: e.y
+                            }, {
+                                x: this.x,
+                                y: this.y
+                            }, {
+                                x: endX,
+                                y: endY
+                            });
                             if (distSq < Math.pow(e.radius + beamWidth, 2)) {
                                 e.takeDamage(this.stats.damage, this.typeKey);
                                 createParticles(e.x, e.y, 3, this.stats.color);
@@ -1130,10 +539,11 @@
                         gameState.particles.push(new Beam(this.x, this.y, endX, endY, this.stats.color, beamWidth));
                         this.lastShot = 0;
                     }
+
+                // --- 화염(Flame) 타워 로직 ---
                 } else if (this.typeKey === 'flame') {
                     let target = null;
                     let minDist = Infinity;
-                    
                     for (const e of enemies) {
                         if (e.health <= 0) continue;
                         const d = distance(this.x, this.y, e.x, e.y);
@@ -1145,43 +555,37 @@
 
                     if (target) {
                         const targetAngle = Math.atan2(target.y - this.y, target.x - this.x);
-                        const diff = targetAngle - this.angle;
-                        let dAngle = Math.atan2(Math.sin(diff), Math.cos(diff));
-                        this.angle += dAngle * 0.2 * gameSpeed; 
+                        let dAngle = Math.atan2(Math.sin(targetAngle - this.angle), Math.cos(targetAngle - this.angle));
+                        this.angle += dAngle * 0.2 * gameSpeed;
+
+                        if (Math.random() < 0.3) Sound.flame();
 
                         const particleCount = 4;
                         const spreadAngle = Math.PI / 2.5;
-                        
-                        for(let i=0; i<particleCount; i++) {
-                            const randomOffset = (Math.random() - 0.5) * spreadAngle; 
+                        for (let i = 0; i < particleCount; i++) {
+                            const randomOffset = (Math.random() - 0.5) * spreadAngle;
                             const fireAngle = this.angle + randomOffset;
                             const speedVar = 0.6 + Math.random() * 0.6;
-
                             gameState.projectiles.push(new FlameProjectile(
                                 this.x, this.y, fireAngle, this.stats.damage, this.stats.range * scale, this.stats.color, this.typeKey, speedVar
                             ));
                         }
                         this.lastShot = 0;
                     }
+
+                // --- 일반 투사체 타워 로직 ---
                 } else {
                     let target = null;
                     let bestScore = -Infinity;
-
                     for (const e of enemies) {
                         if (e.health <= 0) continue;
                         const d = distance(this.x, this.y, e.x, e.y);
-                        
                         if (d <= range) {
-                            const distToNext = distance(e.x, e.y, pathPoints[e.pathIndex+1].x*scale, pathPoints[e.pathIndex+1].y*scale);
+                            const distToNext = distance(e.x, e.y, pathPoints[e.pathIndex + 1].x * scale, pathPoints[e.pathIndex + 1].y * scale);
                             const progress = e.pathIndex * 10000 + (10000 - distToNext);
-                            
                             let score = 0;
-
-                            if (this.typeKey === 'basic' || this.typeKey === 'sniper') {
-                                score = e.health * 100000 + progress;
-                            } else {
-                                score = progress;
-                            }
+                            if (this.typeKey === 'basic' || this.typeKey === 'sniper') score = e.health * 100000 + progress;
+                            else score = progress;
 
                             if (score > bestScore) {
                                 bestScore = score;
@@ -1189,43 +593,43 @@
                             }
                         }
                     }
+
                     if (target) {
                         this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+                        Sound.shoot();
                         gameState.projectiles.push(new Projectile(this.x, this.y, target, this.stats, this.level, this.typeKey));
                         this.lastShot = 0;
                     }
                 }
             }
+
             draw() {
                 const scale = getScale();
                 const gridSize = getGridSize();
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                
+
                 if (gameState.draggingTower === this) ctx.globalAlpha = 0.6;
 
-                // [수정] 4성, 5성 색상 추가
-                let baseColor = '#374151'; // 1성
+                let baseColor = '#374151';
                 if (this.level === 2) baseColor = '#1e3a8a';
                 if (this.level === 3) baseColor = '#451a03';
-                if (this.level === 4) baseColor = '#581c87'; // purple
-                if (this.level === 5) baseColor = '#991b1b'; // red
-                
-                // 5성은 발광 효과
+                if (this.level === 4) baseColor = '#581c87';
+                if (this.level === 5) baseColor = '#991b1b';
+
                 if (this.level === 5) {
                     ctx.shadowColor = '#ef4444';
                     ctx.shadowBlur = 15;
                 }
 
                 ctx.fillStyle = baseColor;
-                ctx.fillRect(-gridSize/2 + 2, -gridSize/2 + 2, gridSize - 4, gridSize - 4);
-                ctx.shadowBlur = 0; // reset
+                ctx.fillRect(-gridSize / 2 + 2, -gridSize / 2 + 2, gridSize - 4, gridSize - 4);
+                ctx.shadowBlur = 0;
 
                 if (gameState.selectedTower === this || gameState.draggingTower === this) {
                     ctx.strokeStyle = '#fbbf24';
                     ctx.lineWidth = 3;
-                    ctx.strokeRect(-gridSize/2 + 2, -gridSize/2 + 2, gridSize - 4, gridSize - 4);
-                    
+                    ctx.strokeRect(-gridSize / 2 + 2, -gridSize / 2 + 2, gridSize - 4, gridSize - 4);
                     ctx.beginPath();
                     ctx.arc(0, 0, this.stats.range * scale, 0, Math.PI * 2);
                     ctx.fillStyle = 'rgba(251, 191, 36, 0.1)';
@@ -1237,446 +641,320 @@
 
                 ctx.rotate(this.angle);
                 ctx.fillStyle = this.stats.color;
-                
-                // 4성, 5성 크기 더 키움
                 let sizeMult = 1 + (this.level - 1) * 0.2;
                 if (this.level >= 4) sizeMult += 0.2;
                 ctx.scale(sizeMult, sizeMult);
 
                 if (this.stats.shape === 'snowflake') {
-                    for(let i=0; i<6; i++) {
-                        ctx.rotate(Math.PI/3); ctx.fillRect(0, -2*scale, 14*scale, 4*scale);
+                    for (let i = 0; i < 6; i++) {
+                        ctx.rotate(Math.PI / 3);
+                        ctx.fillRect(0, -2 * scale, 14 * scale, 4 * scale);
                     }
                 } else if (this.stats.shape === 'circle') {
-                    ctx.beginPath(); ctx.arc(0,0,12*scale,0,Math.PI*2); ctx.fill(); ctx.fillRect(0,-5*scale,20*scale,10*scale);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 12 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillRect(0, -5 * scale, 20 * scale, 10 * scale);
                 } else if (this.stats.shape === 'triangle') {
                     ctx.beginPath();
-                    ctx.moveTo(15*scale, 0);
-                    ctx.lineTo(-10*scale, 10*scale);
-                    ctx.lineTo(-10*scale, -10*scale);
+                    ctx.moveTo(15 * scale, 0);
+                    ctx.lineTo(-10 * scale, 10 * scale);
+                    ctx.lineTo(-10 * scale, -10 * scale);
                     ctx.fill();
                 } else if (this.stats.shape === 'pentagon') {
                     ctx.beginPath();
-                    for(let i=0; i<5; i++) {
-                        ctx.lineTo(15*scale * Math.cos(i * 2 * Math.PI / 5), 15*scale * Math.sin(i * 2 * Math.PI / 5));
+                    for (let i = 0; i < 5; i++) {
+                        ctx.lineTo(15 * scale * Math.cos(i * 2 * Math.PI / 5), 15 * scale * Math.sin(i * 2 * Math.PI / 5));
                     }
                     ctx.fill();
-                    ctx.fillRect(0, -4*scale, 20*scale, 8*scale);
+                    ctx.fillRect(0, -4 * scale, 20 * scale, 8 * scale);
+                } else if (this.stats.shape === 'hexagon') {
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        ctx.lineTo(15 * scale * Math.cos(i * 2 * Math.PI / 6), 15 * scale * Math.sin(i * 2 * Math.PI / 6));
+                    }
+                    ctx.fill();
+                    ctx.fillRect(0, -4 * scale, 20 * scale, 8 * scale);
                 } else {
-                    ctx.fillRect(-10*scale, -10*scale, 20*scale, 20*scale);
-                    if(this.stats.shape !== 'square') ctx.fillRect(0,-4*scale, 18*scale, 8*scale);
+                    ctx.fillRect(-10 * scale, -10 * scale, 20 * scale, 20 * scale);
+                    if (this.stats.shape !== 'square') ctx.fillRect(0, -4 * scale, 18 * scale, 8 * scale);
                 }
                 ctx.restore();
-                
+
+                // 레벨 별 표시 (별)
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 const starText = "★".repeat(this.level);
-                
-                // [수정] 4성, 5성 별 색상
                 let starFill = '#d1d5db';
                 if (this.level === 2) starFill = '#60a5fa';
-                if (this.level === 3) starFill = '#fbbf24';
-                if (this.level === 4) starFill = '#a855f7';
+                if (this.level === 3) starFill = '#f472b6';
+                if (this.level === 4) starFill = '#fb923c';
                 if (this.level === 5) starFill = '#ef4444';
-
                 ctx.fillStyle = starFill;
                 ctx.font = `bold ${12*scale}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.shadowColor = '#000';
                 ctx.shadowBlur = 4;
-                ctx.fillText(starText, 0, -gridSize/2);
+                ctx.fillText(starText, 0, -gridSize / 2);
                 ctx.restore();
                 ctx.globalAlpha = 1.0;
             }
         }
 
-        class Projectile {
-            constructor(x, y, target, stats, level, typeKey) {
-                this.x = x; this.y = y; this.target = target;
-                this.damage = stats.damage; this.color = stats.color;
-                this.isAoe = stats.aoe; this.slowFactor = stats.slowFactor;
-                this.slowDuration = stats.slowDuration;
-                this.speed = 10 * getScale(); 
-                this.radius = (3 + (level-1)) * getScale();
-                this.typeKey = typeKey;
-                
-                this.aoeRadius = (stats.aoeRadius || 60) * getScale();
-
-                this.tx = target.x; this.ty = target.y;
+        // --- Core Game Loop Functions ---
+        function generateShop() {
+            gameState.shopItems = [];
+            let maxLevelFound = 1;
+            for (let i = 0; i < 5; i++) {
+                const randomKey = TOWER_KEYS[Math.floor(Math.random() * TOWER_KEYS.length)];
+                let level = 1; let cost = WAVE_DATA.towerCost; 
+                const rand = Math.random();
+                const wave = gameState.wave;
+                if (wave >= 40) { if (rand < 0.10) level = 4; else if (rand < 0.35) level = 3; else if (rand < 0.85) level = 2; else level = 1; } 
+                else if (wave >= 30) { if (rand < 0.05) level = 4; else if (rand < 0.20) level = 3; else if (rand < 0.70) level = 2; else level = 1; } 
+                else if (wave >= 25) { if (rand < 0.10) level = 3; else if (rand < 0.50) level = 2; else level = 1; } 
+                else if (wave >= 20) { if (rand < 0.10) level = 3; else if (rand < 0.40) level = 2; else level = 1; } 
+                else if (wave >= 10) { if (rand < 0.20) level = 2; else level = 1; }
+                if (level === 2) cost = 200; else if (level === 3) cost = 500; else if (level === 4) cost = 1200;
+                if (level > maxLevelFound) maxLevelFound = level;
+                gameState.shopItems.push({ typeKey: randomKey, id: Date.now() + i, bought: false, level: level, cost: cost });
             }
-            update() {
-                if (gameState.enemies.includes(this.target)) { this.tx = this.target.x; this.ty = this.target.y; }
-                const d = distance(this.x, this.y, this.tx, this.ty);
-                const moveDist = this.speed * gameSpeed; 
+            if (maxLevelFound >= 4) triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#f97316', 80);
+            else if (maxLevelFound === 3) triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#ec4899', 50); 
+            else if (maxLevelFound === 2) triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#3b82f6', 30); 
+            gameState.selectedShopIdx = null; renderShopUI();
+        }
 
-                if (d < moveDist) {
-                    const scale = getScale();
-                    if (this.isAoe) {
-                        if (this.slowFactor) {
-                            gameState.particles.push(new Shockwave(this.x, this.y, this.aoeRadius, '#67e8f9')); 
-                            for(let i=0; i<8; i++) {
-                                gameState.particles.push(new SnowParticle(this.x, this.y));
-                            }
-                        } else {
-                            gameState.particles.push(new Shockwave(this.x, this.y, this.aoeRadius, this.color));
-                            createParticles(this.x, this.y, 15, this.color);
-                            createParticles(this.x, this.y, 8, '#ffffff');
-                        }
-
-                        gameState.enemies.forEach(e => {
-                            if (distance(this.x, this.y, e.x, e.y) < this.aoeRadius) {
-                                e.takeDamage(this.damage, this.typeKey);
-                                if (this.slowFactor) {
-                                    e.applySlow(this.slowFactor, this.slowDuration);
-                                }
-                            }
-                        });
-                    } else if (gameState.enemies.includes(this.target)) {
-                        if (this.slowFactor) {
-                            this.target.applySlow(this.slowFactor, this.slowDuration);
-                            gameState.particles.push(new Shockwave(this.x, this.y, 20 * scale, '#67e8f9'));
-                            createParticles(this.x, this.y, 5, '#e0f2fe'); 
-                        } else {
-                            createParticles(this.x, this.y, 3, this.color);
-                        }
-                        this.target.takeDamage(this.damage, this.typeKey);
-                    }
-                    return true;
-                }
-                this.x += ((this.tx - this.x)/d)*moveDist;
-                this.y += ((this.ty - this.y)/d)*moveDist;
-                return false;
-            }
-            draw() {
-                ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+        function triggerUIExplosion(x, y, color, count = 30) {
+            const layer = document.getElementById('ui-effect-layer');
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div'); p.classList.add('ui-particle');
+                const size = Math.random() * 6 + 4; p.style.width = `${size}px`; p.style.height = `${size}px`; p.style.backgroundColor = color;
+                p.style.left = `${x}px`; p.style.top = `${y}px`; p.style.transform = `translate(-50%, -50%)`; 
+                const angle = Math.random() * Math.PI * 2; const velocity = Math.random() * 150 + 50;
+                p.style.transition = `all ${0.5 + Math.random()*0.5}s ease-out`; layer.appendChild(p); p.offsetHeight;
+                requestAnimationFrame(() => { p.style.transform = `translate(${Math.cos(angle) * velocity}px, ${Math.sin(angle) * velocity}px) scale(0)`; p.style.opacity = '0'; });
+                setTimeout(() => p.remove(), 1000);
             }
         }
 
-        class FlameProjectile {
-            constructor(x, y, angle, damage, range, color, typeKey, speedMultiplier = 1.0) {
-                this.x = x; this.y = y;
-                const speed = 6 * getScale() * speedMultiplier;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                this.damage = damage;
-                this.life = range / speed; 
-                this.maxLife = this.life;
-                this.color = color;
-                this.hitList = []; 
-                this.radius = 2 * getScale();
-                this.typeKey = typeKey;
-            }
-            update() {
-                this.x += this.vx * gameSpeed; 
-                this.y += this.vy * gameSpeed;
-                this.life -= 1 * gameSpeed;
-                
-                const progress = 1 - (this.life / this.maxLife);
-                this.radius = (3 + progress * 15) * getScale(); 
-
-                this.vx *= 0.98;
-                this.vy *= 0.98;
-
-                gameState.enemies.forEach(e => {
-                    if (e.health > 0 && !this.hitList.includes(e) && distance(this.x, this.y, e.x, e.y) < e.radius + this.radius) {
-                        e.takeDamage(this.damage, this.typeKey);
-                        this.hitList.push(e);
-                    }
-                });
-
-                return this.life <= 0;
-            }
-            draw() {
-                ctx.save();
-                const alpha = Math.max(0, this.life / this.maxLife);
-                ctx.globalAlpha = alpha * 0.8;
-
-                if (this.life > this.maxLife * 0.7) ctx.fillStyle = '#fef08a'; 
-                else if (this.life > this.maxLife * 0.4) ctx.fillStyle = '#fb923c'; 
-                else ctx.fillStyle = '#ef4444'; 
-
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        class Beam {
-            constructor(x1, y1, x2, y2, color, width) {
-                this.x1 = x1; this.y1 = y1;
-                this.x2 = x2; this.y2 = y2;
-                this.color = color;
-                this.alpha = 1.0;
-                this.width = width ? width * 0.6 : 5; 
-            }
-            update() {
-                this.alpha -= 0.1 * gameSpeed; 
-                this.width *= 0.8;
-                return this.alpha <= 0;
-            }
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.alpha;
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = this.width * getScale();
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(this.x1, this.y1);
-                ctx.lineTo(this.x2, this.y2);
-                ctx.stroke();
-                
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 10;
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = (this.width / 2) * getScale();
-                ctx.stroke();
-                
-                ctx.restore();
-            }
-        }
-
-        class Shockwave {
-            constructor(x, y, maxRadius, color) {
-                this.x = x; 
-                this.y = y; 
-                this.color = color;
-                this.radius = 1;
-                this.maxRadius = maxRadius;
-                this.alpha = 0.8;
-            }
-            update() {
-                this.radius += ((this.maxRadius - this.radius) * 0.2 + 2) * gameSpeed; 
-                this.alpha -= 0.06 * gameSpeed;
-                return this.alpha <= 0;
-            }
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, this.alpha);
-                
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = Math.max(0, this.alpha * 0.3);
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.globalAlpha = Math.max(0, this.alpha);
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                ctx.restore();
-            }
-        }
-
-        class SnowParticle {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                const angle = Math.random() * Math.PI * 2;
-                const speed = (Math.random() * 2 + 1); 
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.02 + 0.01;
-                this.size = Math.random() * 4 + 3;
-                this.rotation = Math.random() * Math.PI;
-                this.spin = (Math.random() - 0.5) * 0.2;
-                this.color = '#e0f2fe'; 
-            }
-            update() {
-                this.x += this.vx * gameSpeed;
-                this.y += this.vy * gameSpeed;
-                this.rotation += this.spin * gameSpeed;
-                this.life -= this.decay * gameSpeed;
-                return this.life <= 0;
-            }
-            draw() {
-                const scale = getScale();
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-                ctx.globalAlpha = this.life;
-                ctx.strokeStyle = '#bae6fd'; 
-                ctx.lineWidth = 2;
-                
-                const s = this.size * scale;
-                ctx.beginPath();
-                ctx.moveTo(-s, 0); ctx.lineTo(s, 0);
-                ctx.moveTo(0, -s); ctx.lineTo(0, s);
-                const d = s * 0.7;
-                ctx.moveTo(-d, -d); ctx.lineTo(d, d);
-                ctx.moveTo(-d, d); ctx.lineTo(d, -d);
-                ctx.stroke();
-                
-                ctx.restore();
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y; this.color = color;
-                const a = Math.random()*Math.PI*2, s = Math.random()*2+1;
-                this.vx = Math.cos(a)*s; this.vy = Math.sin(a)*s;
-                this.life = 1.0; this.decay = Math.random()*0.05+0.02;
-            }
-            update() { 
-                this.x+=this.vx * gameSpeed; 
-                this.y+=this.vy * gameSpeed; 
-                this.life-=this.decay * gameSpeed; 
-                return this.life<=0; 
-            }
-            draw() { ctx.globalAlpha=this.life; ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; }
-        }
-
-        class DamageText {
-            constructor(x, y, damage, color) {
-                this.x = x + (Math.random() - 0.5) * 20; 
-                this.y = y - 10;
-                this.damage = Math.round(damage);
-                this.color = color;
-                this.life = 1.0;
-                this.vy = -1; 
-            }
-            update() {
-                this.y += this.vy * gameSpeed * 0.5;
-                this.life -= 0.02 * gameSpeed;
-                return this.life <= 0;
-            }
-            draw() {
-                const scale = getScale();
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, this.life);
-                ctx.font = `bold ${14 * scale}px sans-serif`;
-                ctx.textAlign = 'center';
-                
-                ctx.lineWidth = 3 * scale;
-                ctx.strokeStyle = 'black';
-                ctx.strokeText(this.damage, this.x, this.y);
-                
-                ctx.fillStyle = this.color;
-                ctx.fillText(this.damage, this.x, this.y);
-                
-                ctx.restore();
-            }
-        }
-
-        function createParticles(x, y, n, c) { for(let i=0;i<n;i++) gameState.particles.push(new Particle(x,y,c)); }
-
-        setInterval(() => {
-            if (gameState.isGameOver) return;
-
+        function showHelpModal() {
+            helpContent.innerHTML = '';
             TOWER_KEYS.forEach(key => {
-                gameState.statistics[key].currentDPS = gameState.statistics[key].buffer;
-                gameState.statistics[key].buffer = 0;
-            });
-            updateDPSPanel();
-        }, 1000);
+                const info = TOWER_DATA[key];
+                const card = document.createElement('div');
+                card.className = "bg-gray-700 p-4 rounded-lg flex flex-col gap-2 border border-gray-600";
+                
+                // Icon simulation
+                let iconShape = '';
+                if (info.shape === 'circle') iconShape = 'rounded-full'; else if (info.shape === 'square') iconShape = 'rounded-none rotate-45'; else if (info.shape === 'ring') iconShape = 'rounded-full border-4 border-current'; else if (info.shape === 'snowflake') iconShape = 'rounded-sm border border-white'; else if (info.shape === 'triangle') iconShape = 'w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[24px]'; else if (info.shape === 'hexagon') iconShape = 'rounded-md'; else iconShape = 'rounded-md';
+                let iconStyle = `background-color: ${info.color}; box-shadow: 0 0 10px ${info.color};`;
+                if (info.shape === 'triangle') iconStyle = `border-bottom-color: ${info.color}; filter: drop-shadow(0 0 5px ${info.color}); background-color: transparent; box-shadow: none;`;
 
-        function updateDPSPanel() {
-            if (dpsPanel.classList.contains('hidden')) return;
-
-            const sortedKeys = TOWER_KEYS.sort((a, b) => {
-                return gameState.statistics[b].currentDPS - gameState.statistics[a].currentDPS;
-            });
-
-            let html = '';
-            sortedKeys.forEach(key => {
-                const stat = gameState.statistics[key];
-                const info = TOWER_TYPES[key];
-                if (stat.totalDamage === 0 && stat.currentDPS === 0) return;
-
-                html += `
-                    <div class="dps-row flex justify-between items-center py-1 border-b border-gray-700 last:border-0">
-                        <div class="flex items-center gap-2">
-                            <div class="w-3 h-3 rounded-full shadow" style="background-color: ${info.color}"></div>
-                            <span class="text-gray-300 font-bold">${info.name}</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-yellow-400 font-mono font-bold w-12 inline-block">${stat.currentDPS.toLocaleString()}</span>
-                            <span class="text-gray-500 text-[10px] w-12 inline-block text-right">(${stat.totalDamage.toLocaleString()})</span>
-                        </div>
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 mb-1">
+                        <div class="w-8 h-8 ${iconShape} shadow-lg" style="${iconStyle}"></div>
+                        <span class="font-bold text-lg text-white">${info.name}</span>
+                    </div>
+                    <p class="text-sm text-gray-300">${info.desc}</p>
+                    <div class="text-xs text-gray-400 mt-1">
+                        공격력: <span class="text-white">${info.damage}</span> | 
+                        사거리: <span class="text-white">${info.range}</span> | 
+                        쿨타임: <span class="text-white">${info.cooldown}</span>
                     </div>
                 `;
+                helpContent.appendChild(card);
             });
+            helpModal.classList.remove('hidden');
+        }
 
-            if (html === '') html = '<div class="text-gray-500 text-center py-2">데이터 없음</div>';
-            dpsList.innerHTML = html;
+        helpBtn.addEventListener('click', () => { Sound.click(); showHelpModal(); });
+
+        function showArtifactSelection() {
+            artifactContainer.innerHTML = '';
+            const available = ARTIFACT_DATA.filter(art => !gameState.collectedArtifacts.includes(art.id));
+            if (available.length === 0) { showToast("모든 유물을 획득했습니다!"); return; }
+            const options = []; const pickCount = Math.min(3, available.length);
+            const wave = gameState.wave; let maxRarityFound = 'common';
+            for(let i=0; i<pickCount; i++) {
+                const currentPool = available.filter(a => !options.includes(a));
+                if (currentPool.length === 0) break;
+                let selected = null;
+                for(let attempt=0; attempt<20; attempt++) {
+                    const rand = Math.random(); let targetRarity;
+                    if (wave >= 30) { if (rand < 0.20) targetRarity = 'legendary'; else if (rand < 0.50) targetRarity = 'epic'; else targetRarity = 'rare'; } 
+                    else if (wave >= 15) { if (rand < 0.10) targetRarity = 'legendary'; else if (rand < 0.40) targetRarity = 'epic'; else if (rand < 0.90) targetRarity = 'rare'; else targetRarity = 'common'; } 
+                    else { if (rand < 0.10) targetRarity = 'legendary'; else if (rand < 0.30) targetRarity = 'epic'; else if (rand < 0.60) targetRarity = 'rare'; else targetRarity = 'common'; }
+                    const candidates = currentPool.filter(a => a.rarity === targetRarity);
+                    if (candidates.length > 0) { selected = candidates[Math.floor(Math.random() * candidates.length)]; break; }
+                }
+                if (!selected) selected = currentPool[Math.floor(Math.random() * currentPool.length)];
+                options.push(selected);
+                if (selected.rarity === 'legendary') maxRarityFound = 'legendary'; else if (selected.rarity === 'epic' && maxRarityFound !== 'legendary') maxRarityFound = 'epic';
+            }
+            if (maxRarityFound === 'legendary') setTimeout(() => triggerUIExplosion(window.innerWidth/2, window.innerHeight/2, '#f97316', 100), 200);
+            else if (maxRarityFound === 'epic') setTimeout(() => triggerUIExplosion(window.innerWidth/2, window.innerHeight/2, '#d946ef', 60), 200);
+            options.forEach(art => {
+                const card = document.createElement('div');
+                let rarityClass = `rarity-${art.rarity}`;
+                let rarityName = art.rarity === 'common' ? '일반' : art.rarity === 'rare' ? '희귀' : art.rarity === 'epic' ? '서사' : '전설';
+                let rarityColor = art.rarity === 'common' ? 'text-gray-400' : art.rarity === 'rare' ? 'text-blue-400' : art.rarity === 'epic' ? 'text-pink-400' : 'text-orange-400';
+                let targetText = "전체 적용"; let targetClass = "text-gray-500";
+                if (art.targetType !== 'all') { targetText = `${TOWER_DATA[art.targetType].name} 전용`; targetClass = "text-green-400 font-bold"; }
+                card.className = `artifact-card bg-gray-800 border-2 rounded-xl p-6 flex flex-col items-center justify-between w-full md:w-1/3 h-72 ${rarityClass}`;
+                card.innerHTML = `<div class="flex flex-col items-center w-full"><div class="flex justify-between w-full text-xs mb-2"><span class="${rarityColor} font-bold">[${rarityName}]</span><span class="${targetClass}">${targetText}</span></div><div class="text-2xl font-bold text-white mb-4 text-center break-keep leading-tight">${art.name}</div><div class="text-gray-300 text-center mb-4 break-keep text-sm h-12 flex items-center justify-center">${art.desc}</div></div><button class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-bold w-full transition">선택</button>`;
+                card.onclick = () => selectArtifact(art);
+                artifactContainer.appendChild(card);
+            });
+            artifactModal.classList.remove('hidden');
+        }
+
+        function selectArtifact(artifact) {
+            gameState.collectedArtifacts.push(artifact.id);
+            if (artifact.targetType === 'all') {
+                if (artifact.effect.damage) gameState.globalBuffs.damage += artifact.effect.damage;
+                if (artifact.effect.range) gameState.globalBuffs.range += artifact.effect.range;
+                if (artifact.effect.cooldown) gameState.globalBuffs.cooldown *= (1 + artifact.effect.cooldown);
+            }
+            gameState.towers.forEach(t => t.recalculateStats());
+            Sound.upgrade(); artifactModal.classList.add('hidden'); showToast(`${artifact.name} 획득!`); setPhase('SHOP');
+        }
+
+        inventoryBtn.addEventListener('click', () => { renderInventory(); Sound.click(); inventoryModal.classList.remove('hidden'); });
+        statsBtn.addEventListener('click', () => { Sound.click(); dpsPanel.classList.toggle('hidden'); });
+        function renderInventory() {
+            myArtifactList.innerHTML = '';
+            if (gameState.collectedArtifacts.length === 0) { myArtifactList.innerHTML = '<div class="text-gray-500 text-center col-span-full py-10">아직 획득한 유물이 없습니다.</div>'; return; }
+            gameState.collectedArtifacts.forEach(id => {
+                const art = ARTIFACT_DATA.find(a => a.id === id); if (!art) return;
+                const item = document.createElement('div');
+                let rarityColor = art.rarity === 'common' ? 'border-gray-400' : art.rarity === 'rare' ? 'border-blue-400' : art.rarity === 'epic' ? 'border-pink-400' : 'border-orange-400';
+                let targetText = "전체 적용"; let targetClass = "text-gray-400";
+                if (art.targetType !== 'all') { const towerName = TOWER_DATA[art.targetType].name; targetText = `${towerName} 전용`; targetClass = "text-green-400 font-bold"; }
+                item.className = `my-artifact-item bg-gray-700 p-3 rounded shadow ${rarityColor} flex flex-col gap-1`;
+                item.innerHTML = `<div class="flex justify-between items-start"><span class="font-bold text-sm text-gray-200">${art.name}</span><span class="text-[10px] ${targetClass} bg-black/30 px-1 rounded whitespace-nowrap ml-2">${targetText}</span></div><div class="text-xs text-gray-400">${art.desc}</div>`;
+                myArtifactList.appendChild(item);
+            });
+        }
+        speedBtn.addEventListener('click', () => { if (gameSpeed === 1) gameSpeed = 2; else if (gameSpeed === 2) gameSpeed = 4; else gameSpeed = 1; speedBtn.innerText = `⏩ ${gameSpeed}x`; Sound.click(); });
+        function rerollShop() { if (gameState.phase !== 'SHOP') return; if (gameState.money < REROLL_COST) { showToast("돈이 부족합니다!", "bg-red-600"); return; } gameState.money -= REROLL_COST; updateUI(); Sound.reroll(); generateShop(); createParticles(canvas.width/2, canvas.height + 50, 20, '#a855f7'); }
+        rerollBtn.addEventListener('click', rerollShop);
+        function renderShopUI() {
+            shopContainer.innerHTML = '';
+            gameState.shopItems.forEach((item, idx) => {
+                const btn = document.createElement('button');
+                let borderClass = 'border-gray-600'; 
+                if (item.level === 2) borderClass = 'border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]'; 
+                if (item.level === 3) borderClass = 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)]'; 
+                if (item.level === 4) borderClass = 'border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.6)]';
+                let baseClass = `shop-card relative w-24 sm:w-32 h-36 sm:h-44 bg-gray-800 rounded-xl flex flex-col items-center justify-center p-2 group shrink-0 border-2 transition-all duration-200`;
+                if (gameState.selectedShopIdx === idx) baseClass += ` border-blue-500 bg-gray-700 shadow-[0_0_15px_rgba(59,130,246,0.6)] transform -translate-y-2`; else baseClass += ` ${borderClass}`;
+                btn.className = baseClass;
+                if (item.bought) {
+                    btn.disabled = true; btn.innerHTML = `<span class="text-red-500 font-bold text-lg sm:text-xl rotate-[-15deg] border-2 border-red-500 px-2 rounded">SOLD</span>`; btn.className = `shop-card relative w-24 sm:w-32 h-36 sm:h-44 bg-gray-800 rounded-xl flex flex-col items-center justify-center p-2 group shrink-0 border-2 border-gray-700 opacity-50 cursor-not-allowed filter grayscale`;
+                } else {
+                    const info = TOWER_DATA[item.typeKey];
+                    let iconShape = '';
+                    if (info.shape === 'circle') iconShape = 'rounded-full'; else if (info.shape === 'square') iconShape = 'rounded-none rotate-45'; else if (info.shape === 'ring') iconShape = 'rounded-full border-4 border-current'; else if (info.shape === 'snowflake') iconShape = 'rounded-sm border border-white'; else if (info.shape === 'triangle') iconShape = 'w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[24px]'; else if (info.shape === 'hexagon') iconShape = 'rounded-md'; 
+                    else iconShape = 'rounded-md';
+                    let iconStyle = `background-color: ${info.color}; box-shadow: 0 0 10px ${info.color};`;
+                    if (info.shape === 'triangle') iconStyle = `border-bottom-color: ${info.color}; filter: drop-shadow(0 0 5px ${info.color}); background-color: transparent; box-shadow: none;`;
+                    if (info.shape === 'hexagon') iconStyle = `background-color: ${info.color}; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); box-shadow: none; filter: drop-shadow(0 0 5px ${info.color});`;
+
+                    const stars = "★".repeat(item.level);
+                    let starColor = "text-gray-500"; let nameColor = "text-white";
+                    if (item.level === 2) { starColor = "text-blue-400"; nameColor = "text-blue-200"; }
+                    else if (item.level === 3) { starColor = "text-pink-400"; nameColor = "text-pink-200"; }
+                    else if (item.level === 4) { starColor = "text-orange-400"; nameColor = "text-orange-200"; }
+                    btn.innerHTML = `<div class="w-8 h-8 sm:w-12 sm:h-12 ${iconShape} mb-2 sm:mb-3 shadow-lg transition-transform group-hover:scale-110" style="${iconStyle}"></div><div class="font-bold text-xs sm:text-sm text-center leading-tight mb-1 truncate w-full ${nameColor}">${info.name}</div><div class="text-yellow-400 font-mono text-xs sm:text-sm">💰${item.cost}</div><div class="text-[10px] ${starColor} mt-1 font-bold tracking-widest">${stars}</div><div class="absolute bottom-full mb-2 bg-black/95 text-xs text-white p-3 rounded-lg w-48 hidden md:block group-hover:block z-50 pointer-events-none text-left border border-gray-600 shadow-xl"><div class="mb-1 border-b border-gray-700 pb-1"><span class="font-bold text-sm ${nameColor}">${info.name}</span> <span class="${starColor} text-[10px]">(${item.level}성)</span></div><div class="text-gray-300 mb-2 leading-snug break-keep">${info.desc}</div><div class="grid grid-cols-2 gap-x-2 text-[10px] text-gray-400"><span>공격력: <span class="text-white font-mono">${Math.round(info.damage * Math.pow(2, item.level-1))}</span></span><span>사거리: <span class="text-white font-mono">${Math.round(info.range * (1 + (item.level-1)*0.2))}</span></span></div></div>`;
+                    if (gameState.money < item.cost) btn.classList.add('opacity-50');
+                    btn.onclick = () => selectShopItem(idx);
+                }
+                shopContainer.appendChild(btn);
+            });
+        }
+        function selectShopItem(idx) { if (gameState.phase !== 'SHOP') return; if (gameState.selectedShopIdx === idx) { gameState.selectedShopIdx = null; } else { const item = gameState.shopItems[idx]; if (gameState.money < item.cost) { showToast("돈이 부족합니다!", "bg-red-600"); return; } Sound.click(); gameState.selectedShopIdx = idx; deselectTowerOnMap(); } renderShopUI(); }
+        function deselectTowerOnMap() { gameState.selectedTower = null; towerInfoPanel.classList.add('hidden'); }
+        function showToast(msg, bgClass="bg-blue-600") { phaseToast.textContent = msg; phaseToast.className = `absolute top-4 left-1/2 transform -translate-x-1/2 text-white px-6 py-2 rounded-full shadow-xl z-40 font-bold phase-toast ${bgClass} whitespace-nowrap`; phaseToast.classList.remove('hidden'); phaseToast.style.animation = 'none'; phaseToast.offsetHeight; phaseToast.style.animation = null; setTimeout(() => { phaseToast.classList.add('hidden'); }, 2500); }
+        function setPhase(newPhase) { 
+            gameState.phase = newPhase; 
+            const badge = document.getElementById('phase-badge');
+            if (newPhase === 'SHOP') {
+                badge.textContent = "상점 단계"; badge.className = "text-xs font-bold text-blue-400 mt-1 uppercase tracking-wider";
+                startBtn.classList.remove('hidden'); shopContainer.parentElement.classList.remove('opacity-50', 'pointer-events-none'); rerollBtn.disabled = false;
+                showToast(`🏪 웨이브 ${gameState.wave} 상점 오픈!`);
+            } else if (newPhase === 'BATTLE') {
+                badge.textContent = "전투 단계"; badge.className = "text-xs font-bold text-red-500 mt-1 uppercase tracking-wider";
+                startBtn.classList.add('hidden'); shopContainer.parentElement.classList.add('opacity-50', 'pointer-events-none'); rerollBtn.disabled = true;
+                gameState.selectedShopIdx = null; deselectTowerOnMap(); renderShopUI();
+                showToast(`⚔️ 웨이브 ${gameState.wave} 전투 시작!`, "bg-red-600"); spawnWave();
+            }
+        }
+        startBtn.addEventListener('click', () => { if (gameState.phase === 'SHOP') { Sound.click(); setPhase('BATTLE'); } });
+        function checkAndMerge(newTower) {
+            const sameTowers = gameState.towers.filter(t => t.typeKey === newTower.typeKey && t.level === newTower.level);
+            if (sameTowers.length >= 3) {
+                if (newTower.level >= 5) { showToast("최고 레벨입니다!", "bg-yellow-500"); return; }
+                const targets = sameTowers.slice(0, 3);
+                gameState.towers = gameState.towers.filter(t => !targets.includes(t));
+                targets.forEach(t => createParticles(t.x, t.y, 10, '#fff'));
+                const centerTower = targets.includes(newTower) ? newTower : targets[targets.length-1];
+                const upgradedTower = new Tower(centerTower.x, centerTower.y, centerTower.typeKey);
+                upgradedTower.level = centerTower.level + 1; upgradedTower.recalculateStats();
+                gameState.towers.push(upgradedTower);
+                let particleColor = '#fbbf24'; if (upgradedTower.level === 4) particleColor = '#f97316'; if (upgradedTower.level === 5) particleColor = '#ef4444'; 
+                Sound.upgrade(); createParticles(centerTower.x, centerTower.y, 30, particleColor);
+                showToast(`🎉 ${TOWER_DATA[upgradedTower.typeKey].name} ${upgradedTower.level}성 합체 성공!`, "bg-yellow-600");
+                setTimeout(() => checkAndMerge(upgradedTower), 300);
+            }
         }
 
         function spawnWave() {
             let spawnQueue = [];
             const wave = gameState.wave;
-
-            if (wave % 10 === 0) {
-                spawnQueue.push('BOSS');
-                for(let i=0; i<5; i++) spawnQueue.push('FAST');
+            if (wave % WAVE_DATA.bossInterval === 0) {
+                spawnQueue.push('BOSS'); for(let i=0; i<5; i++) spawnQueue.push('FAST');
             } else {
                 const count = 5 + Math.floor(wave * 1.5);
                 for(let i=0; i<count; i++) {
                     const rand = Math.random();
-                    if (wave >= 5 && rand < 0.15) {
-                        spawnQueue.push('TANK');
-                    } else if (wave >= 3 && rand < 0.4) {
-                        spawnQueue.push('FAST');
-                    } else {
-                        spawnQueue.push('NORMAL');
-                    }
+                    if (wave >= 5 && rand < 0.15) spawnQueue.push('TANK');
+                    else if (wave >= 3 && rand < 0.4) spawnQueue.push('FAST');
+                    else spawnQueue.push('NORMAL');
                 }
             }
-
             gameState.spawnQueue = spawnQueue;
             gameState.currentSpawnInterval = Math.max(300, 1000 - wave * 30);
             gameState.spawnTimer = gameState.currentSpawnInterval; 
         }
 
         function endWave() {
-            generateShop();
-            setPhase('SHOP');
-
-            if (gameState.wave % 5 === 0) {
-                showArtifactSelection();
-            }
-            
-            gameState.wave++;
-            gameState.money += 100;
-            updateUI();
+            generateShop(); setPhase('SHOP');
+            if (gameState.wave % 5 === 0) showArtifactSelection();
+            gameState.wave++; gameState.money += 100; updateUI();
         }
 
         function updateUI() {
-            livesDisplay.innerText = gameState.lives;
-            moneyDisplay.innerText = gameState.money;
-            waveDisplay.innerText = gameState.wave;
+            livesDisplay.innerText = gameState.lives; moneyDisplay.innerText = gameState.money; waveDisplay.innerText = gameState.wave;
         }
 
         function drawGrid() {
-            const gridSize = getGridSize();
-            const cols = Math.floor(canvas.width / gridSize);
-            const rows = Math.floor(canvas.height / gridSize);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.lineWidth = 1;
+            const gridSize = getGridSize(); const cols = Math.floor(canvas.width / gridSize); const rows = Math.floor(canvas.height / gridSize);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'; ctx.lineWidth = 1;
             for(let i=0; i<=cols; i++) { ctx.beginPath(); ctx.moveTo(i*gridSize,0); ctx.lineTo(i*gridSize,canvas.height); ctx.stroke(); }
             for(let j=0; j<=rows; j++) { ctx.beginPath(); ctx.moveTo(0,j*gridSize); ctx.lineTo(canvas.width,j*gridSize); ctx.stroke(); }
         }
 
         function drawMap() {
-            const scale = getScale();
-            const gridSize = getGridSize();
+            const scale = getScale(); const gridSize = getGridSize();
             ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
-            
-            ctx.lineWidth = gridSize; 
-            ctx.strokeStyle = '#374151'; 
+            ctx.lineWidth = gridSize; ctx.strokeStyle = '#374151'; 
             ctx.beginPath(); ctx.moveTo(pathPoints[0].x*scale, pathPoints[0].y*scale);
-            for(let i=1;i<pathPoints.length;i++) ctx.lineTo(pathPoints[i].x*scale, pathPoints[i].y*scale);
-            ctx.stroke();
-
-            ctx.lineWidth = 2 * scale;
-            ctx.strokeStyle = '#1f2937'; 
+            for(let i=1;i<pathPoints.length;i++) ctx.lineTo(pathPoints[i].x*scale, pathPoints[i].y*scale); ctx.stroke();
+            ctx.lineWidth = 2 * scale; ctx.strokeStyle = '#1f2937'; 
             ctx.setLineDash([15 * scale, 15 * scale]);
             ctx.beginPath(); ctx.moveTo(pathPoints[0].x*scale, pathPoints[0].y*scale);
-            for(let i=1;i<pathPoints.length;i++) ctx.lineTo(pathPoints[i].x*scale, pathPoints[i].y*scale);
-            ctx.stroke();
+            for(let i=1;i<pathPoints.length;i++) ctx.lineTo(pathPoints[i].x*scale, pathPoints[i].y*scale); ctx.stroke();
             ctx.setLineDash([]);
         }
 
@@ -1688,7 +966,6 @@
                 if (gameState.spawnTimer <= 0) {
                     const type = gameState.spawnQueue.shift();
                     gameState.enemies.push(new Enemy(gameState.wave, type));
-                    
                     if (type === 'BOSS') {
                         showToast("⚠️ 보스 출현! ⚠️", "bg-red-600");
                         createParticles(pathPoints[0].x * getScale(), pathPoints[0].y * getScale(), 30, '#ef4444');
@@ -1702,11 +979,11 @@
             for (let i = gameState.enemies.length - 1; i >= 0; i--) {
                 if (gameState.enemies[i].update()) {
                     if (gameState.enemies[i].pathIndex >= pathPoints.length - 1) {
-                        gameState.lives--;
-                        updateUI();
+                        gameState.lives--; updateUI();
                         if (gameState.lives <= 0) {
                             gameState.isGameOver = true;
                             document.getElementById('final-wave').innerText = gameState.wave;
+                            Sound.gameOver();
                             gameOverModal.classList.remove('hidden');
                         }
                     }
@@ -1715,34 +992,17 @@
             }
 
             gameState.towers.forEach(t => t.update(gameState.enemies));
-
-            for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
-                if (gameState.projectiles[i].update()) gameState.projectiles.splice(i, 1);
-            }
-
-            for (let i = gameState.enemies.length - 1; i >= 0; i--) {
-                if (gameState.enemies[i].health <= 0) {
-                    gameState.enemies.splice(i, 1);
-                }
-            }
-
-            for (let i = gameState.particles.length - 1; i >= 0; i--) {
-                if (gameState.particles[i].update()) gameState.particles.splice(i, 1);
-            }
-
-            for (let i = gameState.damageTexts.length - 1; i >= 0; i--) {
-                if (gameState.damageTexts[i].update()) gameState.damageTexts.splice(i, 1);
-            }
+            for (let i = gameState.projectiles.length - 1; i >= 0; i--) { if (gameState.projectiles[i].update()) gameState.projectiles.splice(i, 1); }
+            for (let i = gameState.poisonPools.length - 1; i >= 0; i--) { if (gameState.poisonPools[i].update()) gameState.poisonPools.splice(i, 1); }
+            for (let i = gameState.enemies.length - 1; i >= 0; i--) { if (gameState.enemies[i].health <= 0) gameState.enemies.splice(i, 1); }
+            for (let i = gameState.particles.length - 1; i >= 0; i--) { if (gameState.particles[i].update()) gameState.particles.splice(i, 1); }
+            for (let i = gameState.damageTexts.length - 1; i >= 0; i--) { if (gameState.damageTexts[i].update()) gameState.damageTexts.splice(i, 1); }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid();
-            drawMap();
-            
-            gameState.towers.forEach(t => {
-                if (t !== gameState.draggingTower) t.draw();
-            });
+            drawGrid(); drawMap();
+            gameState.poisonPools.forEach(p => p.draw());
+            gameState.towers.forEach(t => { if (t !== gameState.draggingTower) t.draw(); });
             if (gameState.draggingTower) gameState.draggingTower.draw();
-
             gameState.enemies.forEach(e => e.draw());
             gameState.projectiles.forEach(p => p.draw());
             gameState.particles.forEach(p => p.draw());
@@ -1750,165 +1010,89 @@
 
             if (gameState.phase === 'SHOP' && gameState.selectedShopIdx !== null) {
                 const item = gameState.shopItems[gameState.selectedShopIdx];
-                const info = TOWER_TYPES[item.typeKey];
+                const info = TOWER_DATA[item.typeKey];
                 const scale = getScale();
-                
                 const lastPointerPos = { x: mouseX, y: mouseY }; 
                 const snapped = getSnappedPosition(lastPointerPos.x, lastPointerPos.y);
-
                 let rangeGrowth = 0.2; 
-                if (item.typeKey === 'ice') rangeGrowth = 0.5;
+                if (item.typeKey === 'ice') rangeGrowth = 0.3;
                 if (item.typeKey === 'laser') rangeGrowth = 0.4;
                 if (item.typeKey === 'aoe') rangeGrowth = 0.3;
-                
                 const levelRangeMult = (1 + (item.level - 1) * rangeGrowth);
                 const previewRange = info.range * levelRangeMult * scale;
-
-                ctx.beginPath();
-                ctx.arc(snapped.x, snapped.y, previewRange, 0, Math.PI * 2);
+                ctx.beginPath(); ctx.arc(snapped.x, snapped.y, previewRange, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.fill();
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
-                
                 ctx.fillStyle = info.color; ctx.globalAlpha = 0.5;
                 const gridSize = getGridSize();
                 ctx.fillRect(snapped.x - gridSize/2+2, snapped.y - gridSize/2+2, gridSize-4, gridSize-4);
                 ctx.globalAlpha = 1.0;
             }
-
             requestAnimationFrame(loop);
         }
 
         let mouseX = 0, mouseY = 0;
-
         function handlePointerMove(e) {
-            const pos = getPointerPos(e);
-            mouseX = pos.x;
-            mouseY = pos.y;
-
-            if (gameState.draggingTower) {
-                e.preventDefault(); 
-                gameState.draggingTower.x = mouseX;
-                gameState.draggingTower.y = mouseY;
-                gameState.hasDragged = true;
-                deselectTowerOnMap();
-            }
+            const pos = getPointerPos(e); mouseX = pos.x; mouseY = pos.y;
+            if (gameState.draggingTower) { e.preventDefault(); gameState.draggingTower.x = mouseX; gameState.draggingTower.y = mouseY; gameState.hasDragged = true; deselectTowerOnMap(); }
         }
-
         function handlePointerDown(e) {
             if (gameState.phase !== 'SHOP') return;
-            const pos = getPointerPos(e);
-            const gridSize = getGridSize();
-
+            const pos = getPointerPos(e); const gridSize = getGridSize();
             const tower = gameState.towers.find(t => distance(pos.x, pos.y, t.x, t.y) < gridSize/2);
-            
-            if (tower) {
-                gameState.draggingTower = tower;
-                gameState.dragStartPos = { x: tower.x, y: tower.y };
-                gameState.hasDragged = false;
-            }
+            if (tower) { gameState.draggingTower = tower; gameState.dragStartPos = { x: tower.x, y: tower.y }; gameState.hasDragged = false; }
         }
-
         function handlePointerUp(e) {
             if (!gameState.draggingTower) return;
-
-            const pos = getPointerPos(e);
-            const snapped = getSnappedPosition(pos.x, pos.y);
+            const pos = getPointerPos(e); const snapped = getSnappedPosition(pos.x, pos.y);
             const validation = isValidPlacement(snapped.x, snapped.y, gameState.draggingTower); 
-
             if (validation.valid) {
-                gameState.draggingTower.x = snapped.x;
-                gameState.draggingTower.y = snapped.y;
-                if (gameState.hasDragged) {
-                    createParticles(snapped.x, snapped.y, 5, '#fff');
-                }
+                gameState.draggingTower.x = snapped.x; gameState.draggingTower.y = snapped.y;
+                if (gameState.hasDragged) createParticles(snapped.x, snapped.y, 5, '#fff');
             } else {
-                gameState.draggingTower.x = gameState.dragStartPos.x;
-                gameState.draggingTower.y = gameState.dragStartPos.y;
+                gameState.draggingTower.x = gameState.dragStartPos.x; gameState.draggingTower.y = gameState.dragStartPos.y;
                 showToast(validation.msg, "bg-red-500");
             }
-
             gameState.draggingTower = null;
         }
-
         function handleClick(e) {
             if (gameState.isGameOver) return;
-            if (gameState.hasDragged) {
-                gameState.hasDragged = false;
-                return;
-            }
-
-            const pos = getPointerPos(e);
-            const snapped = getSnappedPosition(pos.x, pos.y);
-            const gridSize = getGridSize();
-            
+            if (gameState.hasDragged) { gameState.hasDragged = false; return; }
+            const pos = getPointerPos(e); const snapped = getSnappedPosition(pos.x, pos.y); const gridSize = getGridSize();
             const clickedTower = gameState.towers.find(t => distance(snapped.x, snapped.y, t.x, t.y) < gridSize/2);
-
             if (gameState.phase === 'SHOP') {
                 if (gameState.selectedShopIdx !== null) {
-                    if (clickedTower) {
-                        showToast("이미 타워가 있습니다.", "bg-red-500");
-                        return;
-                    }
+                    if (clickedTower) { showToast("이미 타워가 있습니다.", "bg-red-500"); return; }
                     const validation = isValidPlacement(snapped.x, snapped.y);
-                    if (!validation.valid) {
-                        showToast(validation.msg, "bg-red-500");
-                        return;
-                    }
+                    if (!validation.valid) { showToast(validation.msg, "bg-red-500"); return; }
                     const item = gameState.shopItems[gameState.selectedShopIdx];
                     if (gameState.money >= item.cost) { 
                         gameState.money -= item.cost;
-                        
                         const newTower = new Tower(snapped.x, snapped.y, item.typeKey);
-                        newTower.level = item.level; 
-                        newTower.recalculateStats(); 
-                        
-                        gameState.towers.push(newTower);
-                        item.bought = true; 
-                        gameState.selectedShopIdx = null; 
-                        createParticles(snapped.x, snapped.y, 15, '#fbbf24');
-                        updateUI();
-                        renderShopUI();
-                        checkAndMerge(newTower);
+                        newTower.level = item.level; newTower.recalculateStats(); 
+                        gameState.towers.push(newTower); item.bought = true; gameState.selectedShopIdx = null; 
+                        Sound.buy();
+                        createParticles(snapped.x, snapped.y, 15, '#fbbf24'); updateUI(); renderShopUI(); checkAndMerge(newTower);
                     }
-                } 
-                else if (clickedTower) {
-                    gameState.selectedTower = clickedTower;
-                    updateTowerInfoPanel(clickedTower);
-                } else {
-                    deselectTowerOnMap();
-                }
+                } else if (clickedTower) { gameState.selectedTower = clickedTower; updateTowerInfoPanel(clickedTower); Sound.click(); } 
+                else { deselectTowerOnMap(); }
             } else {
-                if (clickedTower) {
-                    gameState.selectedTower = clickedTower;
-                    updateTowerInfoPanel(clickedTower);
-                } else {
-                    deselectTowerOnMap();
-                }
+                if (clickedTower) { gameState.selectedTower = clickedTower; updateTowerInfoPanel(clickedTower); Sound.click(); } 
+                else { deselectTowerOnMap(); }
             }
         }
-
         function updateTowerInfoPanel(tower) {
-            const info = TOWER_TYPES[tower.typeKey];
+            const info = TOWER_DATA[tower.typeKey];
             document.getElementById('info-name').innerText = info.name;
             document.getElementById('info-level').innerText = `★ ${tower.level}성`;
-            // 레벨별 색상 (1~5)
             let levelClass = `level-${tower.level}`;
             document.getElementById('info-level').className = `text-sm font-bold mb-2 ${levelClass}`;
             document.getElementById('info-range').innerText = Math.round(tower.stats.range);
             document.getElementById('info-damage').innerText = Math.round(tower.stats.damage);
-            
-            // 판매 가격 계산
-            // 기본가 * 2^(level-1) * 0.7
-            const sellPrice = Math.floor(TOWER_COST * Math.pow(2, tower.level - 1) * 0.7);
+            const sellPrice = Math.floor(WAVE_DATA.towerCost * Math.pow(2, tower.level - 1) * 0.7);
             document.getElementById('sell-price').innerText = `+${sellPrice}`;
-            
-            if (gameState.phase === 'SHOP') {
-                sellBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                sellBtn.querySelector('span').innerText = "🗑️ 판매하기";
-            } else {
-                sellBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                sellBtn.querySelector('span').innerText = "전투 중 판매 불가";
-            }
+            if (gameState.phase === 'SHOP') { sellBtn.classList.remove('opacity-50', 'cursor-not-allowed'); sellBtn.querySelector('span').innerText = "🗑️ 판매하기"; } 
+            else { sellBtn.classList.add('opacity-50', 'cursor-not-allowed'); sellBtn.querySelector('span').innerText = "전투 중 판매 불가"; }
             towerInfoPanel.classList.remove('hidden');
         }
 
@@ -1916,37 +1100,60 @@
         canvas.addEventListener('mousemove', handlePointerMove);
         canvas.addEventListener('mouseup', handlePointerUp);
         canvas.addEventListener('click', handleClick);
-
-        canvas.addEventListener('touchstart', (e) => {
-            handlePointerDown(e);
-        }, {passive: false});
-
+        canvas.addEventListener('touchstart', (e) => { handlePointerDown(e); }, {passive: false});
         canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
-        
-        canvas.addEventListener('touchend', (e) => {
-            handlePointerUp(e);
-            if (!gameState.hasDragged) {
-                handleClick(e); 
-            }
-            e.preventDefault();
-        }, {passive: false});
-
+        canvas.addEventListener('touchend', (e) => { handlePointerUp(e); if (!gameState.hasDragged) handleClick(e); e.preventDefault(); }, {passive: false});
 
         sellBtn.addEventListener('click', () => {
             if (gameState.phase !== 'SHOP' || !gameState.selectedTower) return;
-            
             const tower = gameState.selectedTower;
-            const sellPrice = Math.floor(TOWER_COST * Math.pow(2, tower.level - 1) * 0.7);
-            
+            const sellPrice = Math.floor(WAVE_DATA.towerCost * Math.pow(2, tower.level - 1) * 0.7);
             gameState.money += sellPrice;
             gameState.towers = gameState.towers.filter(t => t !== tower);
             gameState.selectedTower = null;
-            
-            createParticles(tower.x, tower.y, 10, '#9ca3af');
-            updateUI();
-            deselectTowerOnMap();
+            Sound.sell();
+            createParticles(tower.x, tower.y, 10, '#9ca3af'); updateUI(); deselectTowerOnMap();
             showToast(`타워를 판매하여 ${sellPrice}골드를 획득했습니다.`);
         });
+
+        setInterval(() => {
+            if (gameState.isGameOver) return;
+            TOWER_KEYS.forEach(key => {
+                gameState.statistics[key].currentDPS = gameState.statistics[key].buffer;
+                gameState.statistics[key].buffer = 0;
+            });
+            updateDPSPanel();
+        }, 1000);
+
+        function updateDPSPanel() {
+            if (dpsPanel.classList.contains('hidden')) return;
+            // [수정] 원본 배열을 건드리지 않도록 [...TOWER_KEYS]로 복사하여 정렬
+            const sortedKeys = [...TOWER_KEYS].sort((a, b) => {
+                const dpsDiff = gameState.statistics[b].currentDPS - gameState.statistics[a].currentDPS;
+                if (dpsDiff !== 0) return dpsDiff; // DPS 높은 순
+                return gameState.statistics[b].totalDamage - gameState.statistics[a].totalDamage; // 총 데미지 높은 순
+            });
+            let html = '';
+            sortedKeys.forEach(key => {
+                const stat = gameState.statistics[key];
+                const info = TOWER_DATA[key];
+                if (stat.totalDamage === 0 && stat.currentDPS === 0) return;
+                html += `
+                    <div class="dps-row flex justify-between items-center py-1 border-b border-gray-700 last:border-0">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full shadow" style="background-color: ${info.color}"></div>
+                            <span class="text-gray-300 font-bold">${info.name}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-yellow-400 font-mono font-bold w-12 inline-block">${stat.currentDPS.toLocaleString()}</span>
+                            <span class="text-gray-500 text-[10px] w-12 inline-block text-right">(${stat.totalDamage.toLocaleString()})</span>
+                        </div>
+                    </div>
+                `;
+            });
+            if (html === '') html = '<div class="text-gray-500 text-center py-2">데이터 없음</div>';
+            dpsList.innerHTML = html;
+        }
 
         generateShop();
         requestAnimationFrame(loop);
