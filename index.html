@@ -418,6 +418,15 @@
                 if (this.level === 4) multiplier = 10;
                 if (this.level === 5) multiplier = 25;
 
+                if (this.typeKey === 'flame') {
+                    multiplier = 1;
+                    if (this.level === 1) multiplier = 1.5; // 2
+                    if (this.level === 2) multiplier = 2; // 4
+                    if (this.level === 3) multiplier = 4; // 8
+                    if (this.level === 4) multiplier = 5; // 10
+                    if (this.level === 5) multiplier = 12; // 25
+                }
+
                 let rangeMultiplierByLevel = 1;
                 if (this.level === 3) rangeMultiplierByLevel = 1.1;
                 if (this.level === 4) rangeMultiplierByLevel = 1.15;
