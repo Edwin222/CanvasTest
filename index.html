@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>샘플 타워 디펜스</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; user-select: none; }
+        canvas { touch-action: none; }
+        
+        .shop-card {
+            transition: all 0.2s;
+            border: 2px solid #374151;
+        }
+        .shop-card:hover:not(:disabled) {
+            transform: translateY(-4px);
+            border-color: #fbbf24;
+            background-color: #374151;
+        }
+        .shop-card.selected {
+            border-color: #3b82f6;
+            background-color: #1f2937;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        .shop-card:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .phase-toast {
+            animation: slideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .level-1 { color: #d1d5db; }
+        .level-2 { color: #60a5fa; text-shadow: 0 0 5px #3b82f6; }
+        .level-3 { color: #fbbf24; text-shadow: 0 0 5px #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
+
+    <!-- 상단 헤더 -->
+    <div class="bg-gray-800 p-4 shadow-lg flex justify-between items-center z-10 relative">
+        <div class="flex flex-col">
+            <h1 class="text-2xl font-bold text-yellow-400 leading-none">🛡️ 샘플 타워 디펜스</h1>
+            <span id="phase-badge" class="text-xs font-bold text-blue-400 mt-1 uppercase tracking-wider">상점 단계</span>
+        </div>
+        
+        <div class="flex gap-8 text-lg font-bold">
+            <div class="flex items-center gap-2 bg-gray-700 px-4 py-1 rounded-full"><span class="text-red-500">❤️</span> <span id="lives-display">20</span></div>
+            <div class="flex items-center gap-2 bg-gray-700 px-4 py-1 rounded-full"><span class="text-yellow-400">💰</span> <span id="money-display">300</span></div>
+            <div class="flex items-center gap-2 bg-gray-700 px-4 py-1 rounded-full"><span class="text-blue-400">🌊</span> <span id="wave-display">1</span></div>
+        </div>
+
+        <button id="start-wave-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded-lg font-bold transition shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1">
+            전투 시작!
+        </button>
+    </div>
+
+    <!-- 메인 게임 영역 -->
+    <div class="flex-1 relative flex justify-center items-center bg-gray-900 overflow-hidden" id="game-container">
+        <canvas id="gameCanvas" class="bg-gray-800 shadow-2xl rounded-lg cursor-crosshair"></canvas>
+        
+        <!-- 타워 정보 패널 -->
+        <div id="tower-info-panel" class="hidden absolute bottom-4 right-4 bg-gray-800 p-4 rounded-xl border border-gray-600 shadow-2xl z-20 w-64">
+            <h3 id="info-name" class="text-lg font-bold text-white mb-1">기본 타워</h3>
+            <p id="info-level" class="text-sm font-bold mb-2 level-1">★ 1성</p>
+            <p class="text-xs text-gray-400 mb-3">사거리: <span id="info-range">120</span> | 데미지: <span id="info-damage">20</span></p>
+            <button id="sell-btn" class="w-full bg-red-600 hover:bg-red-500 text-white py-2 rounded font-bold transition flex justify-center items-center gap-2">
+                <span>🗑️ 판매하기</span>
+                <span class="text-sm font-normal bg-black/20 px-2 rounded text-yellow-300" id="sell-price">+70</span>
+            </button>
+        </div>
+
+        <!-- 게임 오버 모달 -->
+        <div id="game-over-modal" class="hidden absolute inset-0 bg-black/90 flex flex-col justify-center items-center z-50 p-4 text-center">
+            <h2 class="text-6xl font-bold text-red-500 mb-2">GAME OVER</h2>
+            <p class="text-gray-400 mb-6 text-xl">왕국이 함락되었습니다.</p>
+            <p class="text-2xl mb-8 font-bold">최종 웨이브: <span id="final-wave" class="text-yellow-400">1</span></p>
+            
+            <button onclick="location.reload()" class="bg-yellow-500 hover:bg-yellow-400 text-black px-8 py-3 rounded-xl font-bold text-xl transition transform hover:scale-105">
+                다시 도전하기
+            </button>
+        </div>
+        
+        <!-- 알림 메시지 -->
+        <div id="phase-toast" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-xl z-40 font-bold phase-toast">
+            알림
+        </div>
+    </div>
+
+    <!-- 하단 상점 패널 -->
+    <div class="bg-gray-800 h-52 border-t border-gray-700 flex flex-col z-10 shrink-0">
+        <div class="px-4 py-2 bg-gray-900/50 flex justify-between items-center border-b border-gray-700">
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-bold text-gray-400">🛒 상점</span>
+                <button id="reroll-btn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded text-sm font-bold transition flex items-center gap-1">
+                    <span>🔄 리롤</span>
+                    <span class="bg-black/20 px-1 rounded text-yellow-300 text-xs">10G</span>
+                </button>
+            </div>
+            <span class="text-xs text-gray-500" id="shop-status-text">타워를 드래그하여 이동할 수 있습니다.</span>
+        </div>
+        <div id="shop-container" class="flex-1 flex items-center justify-center gap-4 p-4 overflow-x-auto bg-gray-800">
+            <!-- 상점 아이템 -->
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('start-wave-btn');
+        const livesDisplay = document.getElementById('lives-display');
+        const moneyDisplay = document.getElementById('money-display');
+        const waveDisplay = document.getElementById('wave-display');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const shopContainer = document.getElementById('shop-container');
+        const phaseBadge = document.getElementById('phase-badge');
+        const phaseToast = document.getElementById('phase-toast');
+        const towerInfoPanel = document.getElementById('tower-info-panel');
+        const sellBtn = document.getElementById('sell-btn');
+        const rerollBtn = document.getElementById('reroll-btn');
+
+        // 게임 상수
+        const BASE_WIDTH = 800;
+        const BASE_HEIGHT = 600;
+        const BASE_GRID_SIZE = 40;
+        const TOWER_COST = 100;
+        const REROLL_COST = 10;
+        
+        let CANVAS_WIDTH = 800;
+        let CANVAS_HEIGHT = 600;
+
+        const pathPoints = [
+            {x: 0, y: 100}, 
+            {x: 220, y: 100}, 
+            {x: 220, y: 420}, 
+            {x: 500, y: 420}, 
+            {x: 500, y: 220}, 
+            {x: 700, y: 220}, 
+            {x: 700, y: 500}, 
+            {x: 800, y: 500}
+        ];
+
+        // 적 타입 정의
+        const ENEMY_TYPES = {
+            NORMAL: { name: '오크', speed: 1.5, hpMod: 1.0, radius: 15, color: '#22c55e', reward: 10 },
+            FAST:   { name: '고블린', speed: 2.8, hpMod: 0.5, radius: 12, color: '#facc15', reward: 12 },
+            TANK:   { name: '골렘', speed: 0.8, hpMod: 3.5, radius: 22, color: '#a855f7', reward: 25 },
+            BOSS:   { name: '드래곤', speed: 0.5, hpMod: 20.0, radius: 35, color: '#ef4444', reward: 150 }
+        };
+
+        const TOWER_TYPES = {
+            // ⚔️ 전사: 깡뎀 대폭 상향 (DPS 킹)
+            basic: { name: '전사', range: 120, damage: 60, cooldown: 50, color: '#3b82f6', shape: 'circle' },
+            // 🏹 궁수: 사거리 증가, 공속/데미지 상향 (범용성 UP)
+            rapid: { name: '궁수', range: 150, damage: 12, cooldown: 9, color: '#eab308', shape: 'square' },
+            ice:   { name: '마법사', range: 130, damage: 8, cooldown: 45, color: '#22d3ee', shape: 'snowflake', slowFactor: 0.5, slowDuration: 90 },
+            sniper: { name: '저격수', range: 350, damage: 90, cooldown: 120, color: '#dc2626', shape: 'ring' },
+            aoe:    { name: '포병', range: 150, damage: 35, cooldown: 80, color: '#a855f7', shape: 'rect', aoe: true },
+            laser:  { name: '레이저', range: 250, damage: 40, cooldown: 60, color: '#38bdf8', shape: 'triangle' },
+            flame:  { name: '화염방사기', range: 120, damage: 2, cooldown: 4, color: '#f97316', shape: 'pentagon' } 
+        };
+
+        const TOWER_KEYS = Object.keys(TOWER_TYPES);
+
+        // 게임 상태
+        let gameState = {
+            money: 300,
+            lives: 20,
+            wave: 1,
+            phase: 'SHOP',
+            isGameOver: false,
+            
+            enemies: [],
+            towers: [],
+            projectiles: [],
+            particles: [],
+            
+            shopItems: [],
+            selectedShopIdx: null,
+            selectedTower: null,
+
+            // 드래그 관련 상태
+            draggingTower: null,
+            dragStartPos: { x: 0, y: 0 },
+            hasDragged: false
+        };
+
+        // 초기화
+        function resize() {
+            const container = document.getElementById('game-container');
+            const targetRatio = BASE_WIDTH / BASE_HEIGHT;
+            const containerRatio = container.clientWidth / container.clientHeight;
+
+            if (containerRatio > targetRatio) {
+                CANVAS_HEIGHT = container.clientHeight;
+                CANVAS_WIDTH = CANVAS_HEIGHT * targetRatio;
+            } else {
+                CANVAS_WIDTH = container.clientWidth;
+                CANVAS_HEIGHT = CANVAS_WIDTH / targetRatio;
+            }
+
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function getScale() { return CANVAS_WIDTH / BASE_WIDTH; }
+        function getGridSize() { return BASE_GRID_SIZE * getScale(); }
+        function distance(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+
+        // 점(p)과 선분(v, w) 사이의 거리 제곱 계산
+        function distToSegmentSquared(p, v, w) {
+            const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
+            if (l2 == 0) return Math.pow(p.x - v.x, 2) + Math.pow(p.y - v.y, 2);
+            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2);
+        }
+
+        function getLocalCoordinates(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function getSnappedPosition(clientX, clientY) {
+            const { x, y } = getLocalCoordinates(clientX, clientY);
+            return snapLocalCoordinate(x, y);
+        }
+
+        function snapLocalCoordinate(x, y) {
+            const gridSize = getGridSize();
+            const col = Math.floor(x / gridSize);
+            const row = Math.floor(y / gridSize);
+            return {
+                x: col * gridSize + gridSize / 2,
+                y: row * gridSize + gridSize / 2
+            };
+        }
+
+        function isValidPlacement(x, y, excludeTower = null) {
+            const gridSize = getGridSize();
+
+            let onPath = false;
+            for (let i = 0; i < pathPoints.length - 1; i++) {
+                const scale = getScale();
+                const p1 = {x: pathPoints[i].x*scale, y: pathPoints[i].y*scale};
+                const p2 = {x: pathPoints[i+1].x*scale, y: pathPoints[i+1].y*scale};
+                
+                const distSq = distToSegmentSquared({x: x, y: y}, p1, p2);
+                
+                if (distSq < Math.pow(gridSize/2 + 5, 2)) {
+                    return { valid: false, msg: "경로 위에는 배치할 수 없습니다." };
+                }
+            }
+
+            for(const t of gameState.towers) {
+                if (t === excludeTower) continue; 
+                if (distance(x, y, t.x, t.y) < gridSize/2) {
+                    return { valid: false, msg: "이미 타워가 있는 위치입니다." };
+                }
+            }
+
+            return { valid: true };
+        }
+
+        function generateShop() {
+            gameState.shopItems = [];
+            for (let i = 0; i < 5; i++) {
+                const randomKey = TOWER_KEYS[Math.floor(Math.random() * TOWER_KEYS.length)];
+                gameState.shopItems.push({
+                    typeKey: randomKey,
+                    id: Date.now() + i,
+                    bought: false
+                });
+            }
+            gameState.selectedShopIdx = null;
+            renderShopUI();
+        }
+
+        function rerollShop() {
+            if (gameState.phase !== 'SHOP') return;
+            if (gameState.money < REROLL_COST) {
+                showToast("돈이 부족합니다!", "bg-red-600");
+                return;
+            }
+            gameState.money -= REROLL_COST;
+            updateUI();
+            generateShop();
+            createParticles(canvas.width/2, canvas.height + 50, 20, '#a855f7');
+        }
+
+        rerollBtn.addEventListener('click', rerollShop);
+
+        function renderShopUI() {
+            shopContainer.innerHTML = '';
+            gameState.shopItems.forEach((item, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `shop-card relative w-32 h-44 bg-gray-800 rounded-xl flex flex-col items-center justify-center p-2 group ${gameState.selectedShopIdx === idx ? 'selected' : ''}`;
+                
+                if (item.bought) {
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="text-red-500 font-bold text-xl rotate-[-15deg] border-2 border-red-500 px-2 rounded">SOLD OUT</span>`;
+                } else {
+                    const info = TOWER_TYPES[item.typeKey];
+                    let iconShape = '';
+                    if (info.shape === 'circle') iconShape = 'rounded-full';
+                    else if (info.shape === 'square') iconShape = 'rounded-none rotate-45';
+                    else if (info.shape === 'ring') iconShape = 'rounded-full border-4 border-current';
+                    else if (info.shape === 'snowflake') iconShape = 'rounded-sm border border-white';
+                    else if (info.shape === 'triangle') iconShape = 'w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-b-[32px]';
+                    else if (info.shape === 'pentagon') iconShape = 'rounded-md'; // Simple fallback for UI
+                    else iconShape = 'rounded-md';
+
+                    let iconStyle = `background-color: ${info.color}; box-shadow: 0 0 10px ${info.color};`;
+                    if (info.shape === 'triangle') iconStyle = `border-bottom-color: ${info.color}; filter: drop-shadow(0 0 5px ${info.color}); background-color: transparent; box-shadow: none;`;
+
+                    btn.innerHTML = `
+                        <div class="w-12 h-12 ${iconShape} mb-3 shadow-lg transition-transform group-hover:scale-110" style="${iconStyle}"></div>
+                        <div class="font-bold text-sm text-center leading-tight mb-1">${info.name}</div>
+                        <div class="text-yellow-400 font-mono text-sm">💰${TOWER_COST}</div>
+                        <div class="text-[10px] text-gray-500 mt-1">★ 1성</div>
+                        
+                        <div class="absolute bottom-full mb-2 bg-black text-xs text-white p-2 rounded w-40 hidden group-hover:block z-50 pointer-events-none text-left">
+                            <span class="font-bold text-yellow-400">${info.name}</span><br>
+                            공격력: ${info.damage}<br>
+                            사거리: ${info.range}
+                        </div>
+                    `;
+                    
+                    if (gameState.money < TOWER_COST) btn.classList.add('opacity-50');
+                    btn.onclick = () => selectShopItem(idx);
+                }
+                shopContainer.appendChild(btn);
+            });
+        }
+
+        function selectShopItem(idx) {
+            if (gameState.phase !== 'SHOP') return;
+            if (gameState.selectedShopIdx === idx) {
+                gameState.selectedShopIdx = null;
+            } else {
+                if (gameState.money < TOWER_COST) {
+                    showToast("돈이 부족합니다!", "bg-red-600");
+                    return;
+                }
+                gameState.selectedShopIdx = idx;
+                deselectTowerOnMap();
+            }
+            renderShopUI();
+        }
+
+        function deselectTowerOnMap() {
+            gameState.selectedTower = null;
+            towerInfoPanel.classList.add('hidden');
+        }
+
+        function showToast(msg, bgClass="bg-blue-600") {
+            phaseToast.textContent = msg;
+            phaseToast.className = `absolute top-4 left-1/2 transform -translate-x-1/2 text-white px-6 py-2 rounded-full shadow-xl z-40 font-bold phase-toast ${bgClass}`;
+            phaseToast.classList.remove('hidden');
+            
+            phaseToast.style.animation = 'none';
+            phaseToast.offsetHeight;
+            phaseToast.style.animation = null;
+
+            setTimeout(() => {
+                phaseToast.classList.add('hidden');
+            }, 2500);
+        }
+
+        function setPhase(newPhase) {
+            gameState.phase = newPhase;
+            const badge = document.getElementById('phase-badge');
+            
+            if (newPhase === 'SHOP') {
+                badge.textContent = "상점 단계";
+                badge.className = "text-xs font-bold text-blue-400 mt-1 uppercase tracking-wider";
+                startBtn.classList.remove('hidden');
+                shopContainer.parentElement.classList.remove('opacity-50', 'pointer-events-none');
+                rerollBtn.disabled = false;
+                
+                showToast(`🏪 웨이브 ${gameState.wave} 상점 오픈!`);
+                generateShop(); 
+                
+            } else if (newPhase === 'BATTLE') {
+                badge.textContent = "전투 단계";
+                badge.className = "text-xs font-bold text-red-500 mt-1 uppercase tracking-wider";
+                startBtn.classList.add('hidden');
+                shopContainer.parentElement.classList.add('opacity-50', 'pointer-events-none');
+                rerollBtn.disabled = true;
+                
+                gameState.selectedShopIdx = null;
+                deselectTowerOnMap();
+                renderShopUI();
+                
+                showToast(`⚔️ 웨이브 ${gameState.wave} 전투 시작!`, "bg-red-600");
+                spawnWave();
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (gameState.phase === 'SHOP') setPhase('BATTLE');
+        });
+
+        function checkAndMerge(newTower) {
+            const sameTowers = gameState.towers.filter(t => t.typeKey === newTower.typeKey && t.level === newTower.level);
+            
+            if (sameTowers.length >= 3) {
+                if (newTower.level >= 3) {
+                    showToast("최고 레벨입니다!", "bg-yellow-500");
+                    return;
+                }
+                const targets = sameTowers.slice(0, 3);
+                gameState.towers = gameState.towers.filter(t => !targets.includes(t));
+                targets.forEach(t => createParticles(t.x, t.y, 10, '#fff'));
+
+                const centerTower = targets.includes(newTower) ? newTower : targets[targets.length-1];
+                const upgradedTower = new Tower(centerTower.x, centerTower.y, centerTower.typeKey);
+                upgradedTower.level = centerTower.level + 1;
+                upgradedTower.recalculateStats();
+
+                gameState.towers.push(upgradedTower);
+                createParticles(centerTower.x, centerTower.y, 30, '#fbbf24');
+                showToast(`🎉 ${TOWER_TYPES[upgradedTower.typeKey].name} ${upgradedTower.level}성 합체 성공!`, "bg-yellow-600");
+
+                setTimeout(() => checkAndMerge(upgradedTower), 300);
+            }
+        }
+
+        class Enemy {
+            constructor(wave, typeKey = 'NORMAL') {
+                this.pathIndex = 0;
+                
+                const typeInfo = ENEMY_TYPES[typeKey];
+                this.typeKey = typeKey;
+                this.name = typeInfo.name;
+
+                const scale = getScale();
+                this.x = pathPoints[0].x * scale;
+                this.y = pathPoints[0].y * scale;
+                this.radius = typeInfo.radius * scale;
+                
+                this.baseSpeed = (typeInfo.speed + (wave * 0.05)) * scale; 
+                this.speed = this.baseSpeed;
+                
+                const baseHp = 50 + (wave * 30);
+                this.maxHealth = baseHp * typeInfo.hpMod; 
+                this.health = this.maxHealth;
+                
+                this.color = typeInfo.color;
+                this.reward = typeInfo.reward + Math.floor(wave * 0.5);
+                this.slowTimer = 0;
+            }
+            update() {
+                if (this.slowTimer > 0) {
+                    this.slowTimer--;
+                    if (this.slowTimer <= 0) this.speed = this.baseSpeed;
+                }
+                const scale = getScale();
+                const target = pathPoints[this.pathIndex + 1];
+                if (!target) return true;
+                const tx = target.x * scale, ty = target.y * scale;
+                const dist = Math.hypot(tx - this.x, ty - this.y);
+                if (dist < this.speed) {
+                    this.x = tx; this.y = ty; this.pathIndex++;
+                    if (this.pathIndex >= pathPoints.length - 1) return true;
+                } else {
+                    this.x += ((tx - this.x) / dist) * this.speed;
+                    this.y += ((ty - this.y) / dist) * this.speed;
+                }
+                return false;
+            }
+            applySlow(factor, duration) {
+                if (this.slowTimer <= 0 || this.speed > this.baseSpeed * factor) {
+                    this.speed = this.baseSpeed * factor;
+                    this.slowTimer = duration;
+                } else {
+                    this.slowTimer = Math.max(this.slowTimer, duration);
+                }
+            }
+            draw() {
+                const scale = getScale();
+                const hpPercent = Math.max(0, this.health / this.maxHealth);
+
+                // 체력바 그리기
+                const barWidth = 30 * scale;
+                const barHeight = 4 * scale;
+                const barX = this.x - barWidth / 2;
+                const barY = this.y - this.radius - 8 * scale;
+
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+
+                // 본체 그리기
+                ctx.strokeStyle = this.slowTimer > 0 ? '#22d3ee' : '#fff';
+                ctx.lineWidth = this.slowTimer > 0 ? 3 : 2;
+                
+                if (this.typeKey === 'BOSS') {
+                    ctx.shadowColor = '#ef4444';
+                    ctx.shadowBlur = 10;
+                }
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; 
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.shadowBlur = 0; 
+
+                if (this.slowTimer > 0) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `${10*scale}px Arial`;
+                    ctx.fillText('❄️', this.x-6*scale, this.y-this.radius-15*scale); 
+                }
+            }
+            takeDamage(amount) {
+                if (this.health <= 0) return false; 
+                this.health -= amount;
+                if (this.health <= 0) {
+                    gameState.money += this.reward;
+                    updateUI();
+                    createParticles(this.x, this.y, 5, '#ef4444');
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        class Tower {
+            constructor(x, y, typeKey) {
+                this.x = x; this.y = y; this.typeKey = typeKey;
+                this.level = 1;
+                this.stats = { ...TOWER_TYPES[typeKey] };
+                this.lastShot = 0; this.angle = 0;
+            }
+            recalculateStats() {
+                const base = TOWER_TYPES[this.typeKey];
+                const multiplier = Math.pow(2, this.level - 1);
+                this.stats.damage = base.damage * multiplier;
+                this.stats.range = base.range * (1 + (this.level - 1) * 0.2);
+            }
+            update(enemies) {
+                this.lastShot++;
+                if (this.lastShot < this.stats.cooldown) return;
+                const scale = getScale();
+                const range = this.stats.range * scale;
+                
+                // 특수 타워 로직
+                if (this.typeKey === 'laser') {
+                    // 레이저: 범위 내 첫 타겟을 향해 발사, 경로 상 모든 적 타격
+                    let target = null;
+                    let maxProg = -1;
+                    
+                    // 타겟팅
+                    for (const e of enemies) {
+                        if (e.health <= 0) continue;
+                        const d = distance(this.x, this.y, e.x, e.y);
+                        if (d <= range) {
+                            const prog = e.pathIndex * 1000 + (1000 - distance(e.x, e.y, pathPoints[e.pathIndex+1].x*scale, pathPoints[e.pathIndex+1].y*scale));
+                            if (prog > maxProg) { maxProg = prog; target = e; }
+                        }
+                    }
+
+                    if (target) {
+                        this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+                        // 레이저 끝점 계산
+                        const endX = this.x + Math.cos(this.angle) * range;
+                        const endY = this.y + Math.sin(this.angle) * range;
+                        
+                        // 레이저 충돌 판정 (선분과 점)
+                        enemies.forEach(e => {
+                            if (e.health <= 0) return;
+                            const distSq = distToSegmentSquared({x: e.x, y: e.y}, {x: this.x, y: this.y}, {x: endX, y: endY});
+                            if (distSq < Math.pow(e.radius + 10, 2)) {
+                                e.takeDamage(this.stats.damage);
+                                createParticles(e.x, e.y, 3, this.stats.color);
+                            }
+                        });
+
+                        // 빔 이펙트 생성
+                        gameState.particles.push(new Beam(this.x, this.y, endX, endY, this.stats.color));
+                        this.lastShot = 0;
+                    }
+                } else if (this.typeKey === 'flame') {
+                    // 화염방사기: 타겟을 향해 부채꼴 난사
+                    let target = null;
+                    let minDist = Infinity;
+                    
+                    for (const e of enemies) {
+                        if (e.health <= 0) continue;
+                        const d = distance(this.x, this.y, e.x, e.y);
+                        if (d <= range && d < minDist) {
+                            minDist = d;
+                            target = e;
+                        }
+                    }
+
+                    if (target) {
+                        const targetAngle = Math.atan2(target.y - this.y, target.x - this.x);
+                        // 부드러운 회전
+                        const diff = targetAngle - this.angle;
+                        let dAngle = Math.atan2(Math.sin(diff), Math.cos(diff));
+                        this.angle += dAngle * 0.2; // 회전 속도
+
+                        // 발사: 한 번에 여러 개의 불꽃 입자를 부채꼴로 방사
+                        const particleCount = 4; // 한 프레임에 4개 발사
+                        const spreadAngle = Math.PI / 2.5; // 약 70도 범위
+                        
+                        for(let i=0; i<particleCount; i++) {
+                            // 부채꼴 내 랜덤 각도
+                            const randomOffset = (Math.random() - 0.5) * spreadAngle; 
+                            const fireAngle = this.angle + randomOffset;
+                            
+                            // 속도 다양화 (불꽃의 불규칙성)
+                            const speedVar = 0.6 + Math.random() * 0.6; // 60% ~ 120% 속도
+
+                            gameState.projectiles.push(new FlameProjectile(
+                                this.x, this.y, fireAngle, this.stats.damage, this.stats.range * scale, this.stats.color, speedVar
+                            ));
+                        }
+                        this.lastShot = 0;
+                    }
+                } else {
+                    // 일반 타워
+                    let target = null, maxProg = -1;
+                    for (const e of enemies) {
+                        if (e.health <= 0) continue;
+                        const d = distance(this.x, this.y, e.x, e.y);
+                        if (d <= range) {
+                            const prog = e.pathIndex * 1000 + (1000 - distance(e.x, e.y, pathPoints[e.pathIndex+1].x*scale, pathPoints[e.pathIndex+1].y*scale));
+                            if (prog > maxProg) { maxProg = prog; target = e; }
+                        }
+                    }
+                    if (target) {
+                        this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+                        gameState.projectiles.push(new Projectile(this.x, this.y, target, this.stats, this.level));
+                        this.lastShot = 0;
+                    }
+                }
+            }
+            draw() {
+                const scale = getScale();
+                const gridSize = getGridSize();
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                if (gameState.draggingTower === this) ctx.globalAlpha = 0.6;
+
+                ctx.fillStyle = this.level === 1 ? '#374151' : (this.level === 2 ? '#1e3a8a' : '#451a03'); 
+                ctx.fillRect(-gridSize/2 + 2, -gridSize/2 + 2, gridSize - 4, gridSize - 4);
+                
+                if (gameState.selectedTower === this || gameState.draggingTower === this) {
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(-gridSize/2 + 2, -gridSize/2 + 2, gridSize - 4, gridSize - 4);
+                    
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.stats.range * scale, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(251, 191, 36, 0.1)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(251, 191, 36, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                ctx.rotate(this.angle);
+                ctx.fillStyle = this.stats.color;
+                
+                const sizeMult = 1 + (this.level - 1) * 0.2;
+                ctx.scale(sizeMult, sizeMult);
+
+                if (this.stats.shape === 'snowflake') {
+                    for(let i=0; i<6; i++) {
+                        ctx.rotate(Math.PI/3); ctx.fillRect(0, -2*scale, 14*scale, 4*scale);
+                    }
+                } else if (this.stats.shape === 'circle') {
+                    ctx.beginPath(); ctx.arc(0,0,12*scale,0,Math.PI*2); ctx.fill(); ctx.fillRect(0,-5*scale,20*scale,10*scale);
+                } else if (this.stats.shape === 'triangle') { // Laser
+                    ctx.beginPath();
+                    ctx.moveTo(15*scale, 0);
+                    ctx.lineTo(-10*scale, 10*scale);
+                    ctx.lineTo(-10*scale, -10*scale);
+                    ctx.fill();
+                } else if (this.stats.shape === 'pentagon') { // Flame
+                    ctx.beginPath();
+                    for(let i=0; i<5; i++) {
+                        ctx.lineTo(15*scale * Math.cos(i * 2 * Math.PI / 5), 15*scale * Math.sin(i * 2 * Math.PI / 5));
+                    }
+                    ctx.fill();
+                    ctx.fillRect(0, -4*scale, 20*scale, 8*scale); // 노즐
+                } else {
+                    ctx.fillRect(-10*scale, -10*scale, 20*scale, 20*scale);
+                    if(this.stats.shape !== 'square') ctx.fillRect(0,-4*scale, 18*scale, 8*scale);
+                }
+                ctx.restore();
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                const starText = "★".repeat(this.level);
+                ctx.fillStyle = this.level === 1 ? '#d1d5db' : (this.level === 2 ? '#60a5fa' : '#fbbf24');
+                ctx.font = `bold ${12*scale}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#000';
+                ctx.shadowBlur = 4;
+                ctx.fillText(starText, 0, -gridSize/2);
+                ctx.restore();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, target, stats, level) {
+                this.x = x; this.y = y; this.target = target;
+                this.damage = stats.damage; this.color = stats.color;
+                this.isAoe = stats.aoe; this.slowFactor = stats.slowFactor;
+                this.slowDuration = stats.slowDuration;
+                this.speed = 10 * getScale(); 
+                this.radius = (3 + (level-1)) * getScale();
+                this.tx = target.x; this.ty = target.y;
+            }
+            update() {
+                if (gameState.enemies.includes(this.target)) { this.tx = this.target.x; this.ty = this.target.y; }
+                const d = distance(this.x, this.y, this.tx, this.ty);
+                if (d < this.speed) {
+                    const scale = getScale();
+                    if (this.isAoe) {
+                        gameState.particles.push(new Shockwave(this.x, this.y, 60 * scale, this.color));
+                        createParticles(this.x, this.y, 15, this.color);
+                        createParticles(this.x, this.y, 8, '#ffffff');
+
+                        gameState.enemies.forEach(e => {
+                            if (distance(this.x, this.y, e.x, e.y) < 60*scale) e.takeDamage(this.damage);
+                        });
+                    } else if (gameState.enemies.includes(this.target)) {
+                        if (this.slowFactor) this.target.applySlow(this.slowFactor, this.slowDuration);
+                        this.target.takeDamage(this.damage);
+                        createParticles(this.x, this.y, 3, this.color);
+                    }
+                    return true;
+                }
+                this.x += ((this.tx - this.x)/d)*this.speed;
+                this.y += ((this.ty - this.y)/d)*this.speed;
+                return false;
+            }
+            draw() {
+                ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+            }
+        }
+
+        // 화염방사기 투사체
+        class FlameProjectile {
+            constructor(x, y, angle, damage, range, color, speedMultiplier = 1.0) {
+                this.x = x; this.y = y;
+                const speed = 6 * getScale() * speedMultiplier;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.damage = damage;
+                this.life = range / speed; 
+                this.maxLife = this.life;
+                this.color = color;
+                this.hitList = []; 
+                this.radius = 2 * getScale(); // 초기 크기
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+                
+                // 불꽃이 나갈수록 커짐
+                const progress = 1 - (this.life / this.maxLife);
+                this.radius = (3 + progress * 15) * getScale(); // 3 -> 18 크기로 성장
+
+                // 감속 효과 (공기 저항 느낌)
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                // 충돌 체크
+                gameState.enemies.forEach(e => {
+                    if (e.health > 0 && !this.hitList.includes(e) && distance(this.x, this.y, e.x, e.y) < e.radius + this.radius) {
+                        e.takeDamage(this.damage);
+                        this.hitList.push(e);
+                    }
+                });
+
+                return this.life <= 0;
+            }
+            draw() {
+                ctx.save();
+                const alpha = Math.max(0, this.life / this.maxLife);
+                ctx.globalAlpha = alpha * 0.8; // 약간 투명하게
+
+                // 색상 변화: 중심부(노랑) -> 주변부(주황/빨강)
+                // 간단하게 수명에 따라 색상을 바꿈 (노랑 -> 주황)
+                if (this.life > this.maxLife * 0.7) ctx.fillStyle = '#fef08a'; // yellow-200
+                else if (this.life > this.maxLife * 0.4) ctx.fillStyle = '#fb923c'; // orange-400
+                else ctx.fillStyle = '#ef4444'; // red-500 (끝날 때)
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Beam {
+            constructor(x1, y1, x2, y2, color) {
+                this.x1 = x1; this.y1 = y1;
+                this.x2 = x2; this.y2 = y2;
+                this.color = color;
+                this.alpha = 1.0;
+                this.width = 5;
+            }
+            update() {
+                this.alpha -= 0.1;
+                this.width *= 0.8;
+                return this.alpha <= 0;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.width * getScale();
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(this.x1, this.y1);
+                ctx.lineTo(this.x2, this.y2);
+                ctx.stroke();
+                
+                // Glow
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = (this.width / 2) * getScale();
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+
+        class Shockwave {
+            constructor(x, y, maxRadius, color) {
+                this.x = x; 
+                this.y = y; 
+                this.color = color;
+                this.radius = 1;
+                this.maxRadius = maxRadius;
+                this.alpha = 0.8;
+            }
+            update() {
+                this.radius += (this.maxRadius - this.radius) * 0.2 + 2; 
+                this.alpha -= 0.06;
+                return this.alpha <= 0;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = Math.max(0, this.alpha * 0.3);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y; this.color = color;
+                const a = Math.random()*Math.PI*2, s = Math.random()*2+1;
+                this.vx = Math.cos(a)*s; this.vy = Math.sin(a)*s;
+                this.life = 1.0; this.decay = Math.random()*0.05+0.02;
+            }
+            update() { this.x+=this.vx; this.y+=this.vy; this.life-=this.decay; return this.life<=0; }
+            draw() { ctx.globalAlpha=this.life; ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; }
+        }
+        function createParticles(x, y, n, c) { for(let i=0;i<n;i++) gameState.particles.push(new Particle(x,y,c)); }
+
+        function spawnWave() {
+            let spawnQueue = [];
+            const wave = gameState.wave;
+
+            if (wave % 10 === 0) {
+                spawnQueue.push('BOSS');
+                for(let i=0; i<5; i++) spawnQueue.push('FAST');
+            } else {
+                const count = 5 + Math.floor(wave * 1.5);
+                for(let i=0; i<count; i++) {
+                    const rand = Math.random();
+                    if (wave >= 5 && rand < 0.15) {
+                        spawnQueue.push('TANK');
+                    } else if (wave >= 3 && rand < 0.4) {
+                        spawnQueue.push('FAST');
+                    } else {
+                        spawnQueue.push('NORMAL');
+                    }
+                }
+            }
+
+            let spawnedCount = 0;
+            const intervalTime = Math.max(300, 1000 - wave * 30);
+            
+            const spawner = setInterval(() => {
+                if (gameState.isGameOver) { clearInterval(spawner); return; }
+                
+                if (spawnQueue.length > 0) {
+                    const type = spawnQueue.shift();
+                    gameState.enemies.push(new Enemy(wave, type));
+                    spawnedCount++;
+                    
+                    if (type === 'BOSS') {
+                        showToast("⚠️ 보스 출현! ⚠️", "bg-red-600");
+                        createParticles(pathPoints[0].x * getScale(), pathPoints[0].y * getScale(), 30, '#ef4444');
+                    }
+                } else {
+                    clearInterval(spawner);
+                }
+            }, intervalTime);
+
+            const checker = setInterval(() => {
+                if (gameState.isGameOver) { clearInterval(checker); return; }
+                if (spawnQueue.length === 0 && gameState.enemies.length === 0) {
+                    clearInterval(checker);
+                    endWave();
+                }
+            }, 500);
+        }
+
+        function endWave() {
+            gameState.wave++;
+            gameState.money += 100;
+            updateUI();
+            setPhase('SHOP');
+        }
+
+        function updateUI() {
+            livesDisplay.innerText = gameState.lives;
+            moneyDisplay.innerText = gameState.money;
+            waveDisplay.innerText = gameState.wave;
+        }
+
+        function drawGrid() {
+            const gridSize = getGridSize();
+            const cols = Math.floor(canvas.width / gridSize);
+            const rows = Math.floor(canvas.height / gridSize);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for(let i=0; i<=cols; i++) { ctx.beginPath(); ctx.moveTo(i*gridSize,0); ctx.lineTo(i*gridSize,canvas.height); ctx.stroke(); }
+            for(let j=0; j<=rows; j++) { ctx.beginPath(); ctx.moveTo(0,j*gridSize); ctx.lineTo(canvas.width,j*gridSize); ctx.stroke(); }
+        }
+
+        function drawMap() {
+            const scale = getScale();
+            const gridSize = getGridSize();
+            ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+            
+            ctx.lineWidth = gridSize; 
+            ctx.strokeStyle = '#374151'; 
+            ctx.beginPath(); ctx.moveTo(pathPoints[0].x*scale, pathPoints[0].y*scale);
+            for(let i=1;i<pathPoints.length;i++) ctx.lineTo(pathPoints[i].x*scale, pathPoints[i].y*scale);
+            ctx.stroke();
+
+            ctx.lineWidth = 2 * scale;
+            ctx.strokeStyle = '#1f2937'; 
+            ctx.setLineDash([15 * scale, 15 * scale]);
+            ctx.beginPath(); ctx.moveTo(pathPoints[0].x*scale, pathPoints[0].y*scale);
+            for(let i=1;i<pathPoints.length;i++) ctx.lineTo(pathPoints[i].x*scale, pathPoints[i].y*scale);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function loop() {
+            if (gameState.isGameOver) return;
+
+            for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+                if (gameState.enemies[i].update()) {
+                    if (gameState.enemies[i].pathIndex >= pathPoints.length - 1) {
+                        gameState.lives--;
+                        updateUI();
+                        if (gameState.lives <= 0) {
+                            gameState.isGameOver = true;
+                            document.getElementById('final-wave').innerText = gameState.wave;
+                            // GAME OVER 처리
+                            gameOverModal.classList.remove('hidden');
+                        }
+                    }
+                    gameState.enemies.splice(i, 1);
+                }
+            }
+
+            gameState.towers.forEach(t => t.update(gameState.enemies));
+
+            for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+                if (gameState.projectiles[i].update()) gameState.projectiles.splice(i, 1);
+            }
+
+            for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+                if (gameState.enemies[i].health <= 0) {
+                    gameState.enemies.splice(i, 1);
+                }
+            }
+
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                if (gameState.particles[i].update()) gameState.particles.splice(i, 1);
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawMap();
+            
+            gameState.towers.forEach(t => {
+                if (t !== gameState.draggingTower) t.draw();
+            });
+            if (gameState.draggingTower) gameState.draggingTower.draw();
+
+            gameState.enemies.forEach(e => e.draw());
+            gameState.projectiles.forEach(p => p.draw());
+            gameState.particles.forEach(p => p.draw());
+
+            if (gameState.phase === 'SHOP' && gameState.selectedShopIdx !== null) {
+                const item = gameState.shopItems[gameState.selectedShopIdx];
+                const info = TOWER_TYPES[item.typeKey];
+                const scale = getScale();
+                const gridSize = getGridSize();
+                
+                const snapped = snapLocalCoordinate(mouseX, mouseY);
+
+                ctx.beginPath();
+                ctx.arc(snapped.x, snapped.y, info.range * scale, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
+                
+                ctx.fillStyle = info.color; ctx.globalAlpha = 0.5;
+                ctx.fillRect(snapped.x - gridSize/2+2, snapped.y - gridSize/2+2, gridSize-4, gridSize-4);
+                ctx.globalAlpha = 1.0;
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        let mouseX = 0, mouseY = 0;
+
+        canvas.addEventListener('mousemove', e => {
+            const { x, y } = getLocalCoordinates(e.clientX, e.clientY);
+            mouseX = x;
+            mouseY = y;
+
+            if (gameState.draggingTower) {
+                gameState.draggingTower.x = mouseX;
+                gameState.draggingTower.y = mouseY;
+                gameState.hasDragged = true;
+                
+                deselectTowerOnMap();
+            }
+        });
+
+        canvas.addEventListener('mousedown', e => {
+            if (gameState.phase !== 'SHOP') return;
+
+            const { x, y } = getLocalCoordinates(e.clientX, e.clientY);
+            const gridSize = getGridSize();
+
+            const tower = gameState.towers.find(t => distance(x, y, t.x, t.y) < gridSize/2);
+            
+            if (tower) {
+                gameState.draggingTower = tower;
+                gameState.dragStartPos = { x: tower.x, y: tower.y };
+                gameState.hasDragged = false;
+            }
+        });
+
+        canvas.addEventListener('mouseup', e => {
+            if (!gameState.draggingTower) return;
+
+            const snapped = getSnappedPosition(e.clientX, e.clientY);
+            const validation = isValidPlacement(snapped.x, snapped.y, gameState.draggingTower); 
+
+            if (validation.valid) {
+                gameState.draggingTower.x = snapped.x;
+                gameState.draggingTower.y = snapped.y;
+                if (gameState.hasDragged) {
+                    createParticles(snapped.x, snapped.y, 5, '#fff');
+                }
+            } else {
+                gameState.draggingTower.x = gameState.dragStartPos.x;
+                gameState.draggingTower.y = gameState.dragStartPos.y;
+                showToast(validation.msg, "bg-red-500");
+            }
+
+            setTimeout(() => {
+                gameState.draggingTower = null;
+            }, 0);
+        });
+
+        canvas.addEventListener('click', e => {
+            if (gameState.isGameOver) return;
+            
+            if (gameState.hasDragged) {
+                gameState.hasDragged = false;
+                return;
+            }
+
+            const snapped = getSnappedPosition(e.clientX, e.clientY);
+            const gridSize = getGridSize();
+            
+            const clickedTower = gameState.towers.find(t => distance(snapped.x, snapped.y, t.x, t.y) < gridSize/2);
+
+            if (gameState.phase === 'SHOP') {
+                if (gameState.selectedShopIdx !== null) {
+                    if (clickedTower) {
+                        showToast("이미 타워가 있습니다.", "bg-red-500");
+                        return;
+                    }
+                    
+                    const validation = isValidPlacement(snapped.x, snapped.y);
+                    if (!validation.valid) {
+                        showToast(validation.msg, "bg-red-500");
+                        return;
+                    }
+
+                    const item = gameState.shopItems[gameState.selectedShopIdx];
+                    
+                    if (gameState.money >= TOWER_COST) {
+                        gameState.money -= TOWER_COST;
+                        const newTower = new Tower(snapped.x, snapped.y, item.typeKey);
+                        gameState.towers.push(newTower);
+                        item.bought = true; 
+                        gameState.selectedShopIdx = null; 
+                        createParticles(snapped.x, snapped.y, 15, '#fbbf24');
+                        updateUI();
+                        renderShopUI();
+                        checkAndMerge(newTower);
+                    }
+                } 
+                else if (clickedTower) {
+                    gameState.selectedTower = clickedTower;
+                    
+                    const info = TOWER_TYPES[clickedTower.typeKey];
+                    document.getElementById('info-name').innerText = info.name;
+                    document.getElementById('info-level').innerText = `★ ${clickedTower.level}성`;
+                    document.getElementById('info-level').className = `text-sm font-bold mb-2 level-${clickedTower.level}`;
+                    document.getElementById('info-range').innerText = Math.round(clickedTower.stats.range);
+                    document.getElementById('info-damage').innerText = Math.round(clickedTower.stats.damage);
+                    
+                    const sellPrice = Math.floor(TOWER_COST * Math.pow(2, clickedTower.level - 1) * 0.7);
+                    document.getElementById('sell-price').innerText = `+${sellPrice}`;
+                    
+                    sellBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    sellBtn.querySelector('span').innerText = "🗑️ 판매하기";
+                    towerInfoPanel.classList.remove('hidden');
+                } else {
+                    deselectTowerOnMap();
+                }
+            } else {
+                if (clickedTower) {
+                    gameState.selectedTower = clickedTower;
+                    const info = TOWER_TYPES[clickedTower.typeKey];
+                    document.getElementById('info-name').innerText = info.name;
+                    document.getElementById('info-level').innerText = `★ ${clickedTower.level}성`;
+                    document.getElementById('info-level').className = `text-sm font-bold mb-2 level-${clickedTower.level}`;
+                    document.getElementById('info-range').innerText = Math.round(clickedTower.stats.range);
+                    document.getElementById('info-damage').innerText = Math.round(clickedTower.stats.damage);
+                    
+                    sellBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    sellBtn.querySelector('span').innerText = "전투 중 판매 불가";
+                    towerInfoPanel.classList.remove('hidden');
+                } else {
+                    deselectTowerOnMap();
+                }
+            }
+        });
+
+        sellBtn.addEventListener('click', () => {
+            if (gameState.phase !== 'SHOP' || !gameState.selectedTower) return;
+            
+            const tower = gameState.selectedTower;
+            const sellPrice = Math.floor(TOWER_COST * Math.pow(2, tower.level - 1) * 0.7);
+            
+            gameState.money += sellPrice;
+            gameState.towers = gameState.towers.filter(t => t !== tower);
+            gameState.selectedTower = null;
+            
+            createParticles(tower.x, tower.y, 10, '#9ca3af');
+            updateUI();
+            deselectTowerOnMap();
+            showToast(`타워를 판매하여 ${sellPrice}골드를 획득했습니다.`);
+        });
+
+        generateShop();
+        requestAnimationFrame(loop);
+
+    </script>
+</body>
+</html>
