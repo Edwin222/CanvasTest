@@ -60,6 +60,11 @@
         .my-artifact-item {
             border-left-width: 4px;
         }
+        
+        /* DPS 패널 스타일 */
+        .dps-row {
+            transition: all 0.3s ease;
+        }
 
         @keyframes pulse-orange {
             0% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
@@ -75,9 +80,17 @@
             animation: slideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        .level-1 { color: #d1d5db; }
-        .level-2 { color: #60a5fa; text-shadow: 0 0 5px #3b82f6; }
-        .level-3 { color: #fbbf24; text-shadow: 0 0 5px #f59e0b; }
+        /* 레벨 별 텍스트 색상 */
+        .level-1 { color: #d1d5db; } /* 은색 */
+        .level-2 { color: #60a5fa; text-shadow: 0 0 5px #3b82f6; } /* 파란색 */
+        .level-3 { color: #fbbf24; text-shadow: 0 0 5px #f59e0b; } /* 금색 */
+        .level-4 { color: #a855f7; text-shadow: 0 0 8px #d8b4fe; } /* 보라색 */
+        .level-5 { color: #ef4444; text-shadow: 0 0 10px #fca5a5; animation: pulse-text 1s infinite; } /* 빨간색 */
+
+        @keyframes pulse-text {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
@@ -89,13 +102,16 @@
             <span id="phase-badge" class="text-xs font-bold text-blue-400 mt-1 uppercase tracking-wider">상점 단계</span>
         </div>
         
-        <div class="flex gap-4 text-sm sm:text-lg font-bold">
+        <div class="flex gap-2 sm:gap-4 text-sm sm:text-lg font-bold">
             <div class="flex items-center gap-1 bg-gray-700 px-3 py-1 rounded-full"><span class="text-red-500">❤️</span> <span id="lives-display">20</span></div>
             <div class="flex items-center gap-1 bg-gray-700 px-3 py-1 rounded-full"><span class="text-yellow-400">💰</span> <span id="money-display">300</span></div>
             <div class="flex items-center gap-1 bg-gray-700 px-3 py-1 rounded-full"><span class="text-blue-400">🌊</span> <span id="wave-display">1</span></div>
         </div>
 
         <div class="flex gap-2">
+            <button id="stats-btn" class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">
+                📊 통계
+            </button>
             <button id="inventory-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold transition shadow-lg active:scale-95">
                 🏺 유물
             </button>
@@ -112,6 +128,17 @@
     <div class="flex-1 relative flex justify-center items-center bg-gray-900 overflow-hidden" id="game-container">
         <canvas id="gameCanvas" class="bg-gray-800 shadow-2xl rounded-lg cursor-crosshair"></canvas>
         
+        <!-- DPS 통계 패널 -->
+        <div id="dps-panel" class="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-4 rounded-xl border border-gray-600 shadow-2xl z-30 w-64 hidden transition-opacity pointer-events-none sm:pointer-events-auto">
+            <h3 class="text-sm font-bold text-white mb-2 border-b border-gray-500 pb-1 flex justify-between">
+                <span>전투 통계 (DPS)</span>
+                <span class="text-xs text-gray-400 font-normal">실시간</span>
+            </h3>
+            <div id="dps-list" class="flex flex-col gap-1 text-xs">
+                <!-- 자바스크립트로 채워짐 -->
+            </div>
+        </div>
+
         <!-- 타워 정보 패널 -->
         <div id="tower-info-panel" class="hidden absolute bottom-4 right-4 bg-gray-800 p-4 rounded-xl border border-gray-600 shadow-2xl z-20 w-64">
             <h3 id="info-name" class="text-lg font-bold text-white mb-1">기본 타워</h3>
@@ -188,6 +215,7 @@
         const startBtn = document.getElementById('start-wave-btn');
         const speedBtn = document.getElementById('speed-btn');
         const inventoryBtn = document.getElementById('inventory-btn');
+        const statsBtn = document.getElementById('stats-btn');
         const livesDisplay = document.getElementById('lives-display');
         const moneyDisplay = document.getElementById('money-display');
         const waveDisplay = document.getElementById('wave-display');
@@ -196,6 +224,8 @@
         const artifactContainer = document.getElementById('artifact-container');
         const inventoryModal = document.getElementById('inventory-modal');
         const myArtifactList = document.getElementById('my-artifact-list');
+        const dpsPanel = document.getElementById('dps-panel');
+        const dpsList = document.getElementById('dps-list');
         const shopContainer = document.getElementById('shop-container');
         const phaseBadge = document.getElementById('phase-badge');
         const phaseToast = document.getElementById('phase-toast');
@@ -244,7 +274,7 @@
 
         const TOWER_KEYS = Object.keys(TOWER_TYPES);
 
-        // --- 유물 데이터 ---
+        // 유물 데이터
         const ARTIFACTS = [
             // Common (45종)
             { id: 'c1', name: '훈련용 검', rarity: 'common', targetType: 'all', desc: '공격력 +5%', effect: { damage: 0.05 } },
@@ -381,15 +411,21 @@
             spawnTimer: 0,
             currentSpawnInterval: 0,
 
-            // 전역 버프 상태 (기본값)
             globalBuffs: {
                 damage: 1.0,
                 range: 1.0,
                 cooldown: 1.0 
             },
             
-            collectedArtifacts: [] 
+            collectedArtifacts: [],
+
+            statistics: {},
+            damageTexts: []
         };
+
+        TOWER_KEYS.forEach(key => {
+            gameState.statistics[key] = { totalDamage: 0, currentDPS: 0, buffer: 0 };
+        });
 
         // 초기화
         function resize() {
@@ -423,7 +459,6 @@
             return Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2);
         }
 
-        // --- 입력 처리 헬퍼 (마우스/터치 통합) ---
         function getPointerPos(e) {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -507,18 +542,16 @@
                 });
             }
 
-            // 상점 이펙트
             if (maxLevelFound === 3) {
-                triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#f97316', 50); // 하단 중앙, 주황
+                triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#f97316', 50); 
             } else if (maxLevelFound === 2) {
-                triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#d946ef', 30); // 하단 중앙, 분홍
+                triggerUIExplosion(window.innerWidth/2, window.innerHeight - 150, '#d946ef', 30); 
             }
 
             gameState.selectedShopIdx = null;
             renderShopUI();
         }
 
-        // --- UI 이펙트 함수 ---
         function triggerUIExplosion(x, y, color, count = 30) {
             const layer = document.getElementById('ui-effect-layer');
             
@@ -542,7 +575,7 @@
                 
                 layer.appendChild(p);
 
-                p.offsetHeight; // reflow
+                p.offsetHeight;
 
                 requestAnimationFrame(() => {
                     p.style.transform = `translate(${Math.cos(angle) * velocity}px, ${Math.sin(angle) * velocity}px) scale(0)`;
@@ -656,6 +689,10 @@
         inventoryBtn.addEventListener('click', () => {
             renderInventory();
             inventoryModal.classList.remove('hidden');
+        });
+
+        statsBtn.addEventListener('click', () => {
+            dpsPanel.classList.toggle('hidden');
         });
 
         function renderInventory() {
@@ -824,7 +861,6 @@
                 rerollBtn.disabled = false;
                 
                 showToast(`🏪 웨이브 ${gameState.wave} 상점 오픈!`);
-                // generateShop 제거됨 (endWave에서 호출)
                 
             } else if (newPhase === 'BATTLE') {
                 badge.textContent = "전투 단계";
@@ -850,7 +886,8 @@
             const sameTowers = gameState.towers.filter(t => t.typeKey === newTower.typeKey && t.level === newTower.level);
             
             if (sameTowers.length >= 3) {
-                if (newTower.level >= 3) {
+                // [수정] 5성까지 합체 허용
+                if (newTower.level >= 5) {
                     showToast("최고 레벨입니다!", "bg-yellow-500");
                     return;
                 }
@@ -864,7 +901,13 @@
                 upgradedTower.recalculateStats();
 
                 gameState.towers.push(upgradedTower);
-                createParticles(centerTower.x, centerTower.y, 30, '#fbbf24');
+                
+                // [수정] 이펙트 차별화
+                let particleColor = '#fbbf24'; // 3성까지 기본 금색
+                if (upgradedTower.level === 4) particleColor = '#a855f7'; // 4성 보라
+                if (upgradedTower.level === 5) particleColor = '#ef4444'; // 5성 빨강
+
+                createParticles(centerTower.x, centerTower.y, 30, particleColor);
                 showToast(`🎉 ${TOWER_TYPES[upgradedTower.typeKey].name} ${upgradedTower.level}성 합체 성공!`, "bg-yellow-600");
 
                 setTimeout(() => checkAndMerge(upgradedTower), 300);
@@ -887,7 +930,12 @@
                 this.baseSpeed = (typeInfo.speed + (wave * 0.05)) * scale; 
                 this.speed = this.baseSpeed;
                 
-                const baseHp = (100 + (wave * 40)) * Math.pow(1.035, wave - 1);
+                // [수정] 후반 난이도 스케일링 강화
+                let growthRate = 1.035;
+                if (wave > 40) growthRate = 1.10;
+                else if (wave > 25) growthRate = 1.06;
+
+                const baseHp = (100 + (wave * 40)) * Math.pow(growthRate, wave - 1);
                 
                 this.maxHealth = baseHp * typeInfo.hpMod; 
                 this.health = this.maxHealth;
@@ -961,9 +1009,19 @@
                     ctx.fillText('❄️', this.x-6*scale, this.y-this.radius-15*scale); 
                 }
             }
-            takeDamage(amount) {
+            takeDamage(amount, sourceType) {
                 if (this.health <= 0) return false; 
                 this.health -= amount;
+                
+                if (sourceType && gameState.statistics[sourceType]) {
+                    gameState.statistics[sourceType].totalDamage += amount;
+                    gameState.statistics[sourceType].buffer += amount;
+                }
+
+                if (sourceType && TOWER_TYPES[sourceType]) {
+                    gameState.damageTexts.push(new DamageText(this.x, this.y, amount, TOWER_TYPES[sourceType].color));
+                }
+
                 if (this.health <= 0) {
                     gameState.money += this.reward;
                     updateUI();
@@ -984,7 +1042,14 @@
             }
             recalculateStats() {
                 const base = TOWER_TYPES[this.typeKey];
-                const multiplier = Math.pow(2, this.level - 1);
+                
+                // [수정] 성급별 스탯 배율 (4성, 5성 강화)
+                // 기존: 2^(level-1)
+                // 4성: 8배 -> 10배 (보너스)
+                // 5성: 16배 -> 25배 (폭발적 성장)
+                let multiplier = Math.pow(2, this.level - 1);
+                if (this.level === 4) multiplier = 10; 
+                if (this.level === 5) multiplier = 25; 
                 
                 let damageMult = gameState.globalBuffs.damage;
                 let rangeMult = gameState.globalBuffs.range;
@@ -1057,7 +1122,7 @@
                             if (e.health <= 0) return;
                             const distSq = distToSegmentSquared({x: e.x, y: e.y}, {x: this.x, y: this.y}, {x: endX, y: endY});
                             if (distSq < Math.pow(e.radius + beamWidth, 2)) {
-                                e.takeDamage(this.stats.damage);
+                                e.takeDamage(this.stats.damage, this.typeKey);
                                 createParticles(e.x, e.y, 3, this.stats.color);
                             }
                         });
@@ -1093,7 +1158,7 @@
                             const speedVar = 0.6 + Math.random() * 0.6;
 
                             gameState.projectiles.push(new FlameProjectile(
-                                this.x, this.y, fireAngle, this.stats.damage, this.stats.range * scale, this.stats.color, speedVar
+                                this.x, this.y, fireAngle, this.stats.damage, this.stats.range * scale, this.stats.color, this.typeKey, speedVar
                             ));
                         }
                         this.lastShot = 0;
@@ -1126,7 +1191,7 @@
                     }
                     if (target) {
                         this.angle = Math.atan2(target.y - this.y, target.x - this.x);
-                        gameState.projectiles.push(new Projectile(this.x, this.y, target, this.stats, this.level));
+                        gameState.projectiles.push(new Projectile(this.x, this.y, target, this.stats, this.level, this.typeKey));
                         this.lastShot = 0;
                     }
                 }
@@ -1139,9 +1204,23 @@
                 
                 if (gameState.draggingTower === this) ctx.globalAlpha = 0.6;
 
-                ctx.fillStyle = this.level === 1 ? '#374151' : (this.level === 2 ? '#1e3a8a' : '#451a03'); 
-                ctx.fillRect(-gridSize/2 + 2, -gridSize/2 + 2, gridSize - 4, gridSize - 4);
+                // [수정] 4성, 5성 색상 추가
+                let baseColor = '#374151'; // 1성
+                if (this.level === 2) baseColor = '#1e3a8a';
+                if (this.level === 3) baseColor = '#451a03';
+                if (this.level === 4) baseColor = '#581c87'; // purple
+                if (this.level === 5) baseColor = '#991b1b'; // red
                 
+                // 5성은 발광 효과
+                if (this.level === 5) {
+                    ctx.shadowColor = '#ef4444';
+                    ctx.shadowBlur = 15;
+                }
+
+                ctx.fillStyle = baseColor;
+                ctx.fillRect(-gridSize/2 + 2, -gridSize/2 + 2, gridSize - 4, gridSize - 4);
+                ctx.shadowBlur = 0; // reset
+
                 if (gameState.selectedTower === this || gameState.draggingTower === this) {
                     ctx.strokeStyle = '#fbbf24';
                     ctx.lineWidth = 3;
@@ -1159,7 +1238,9 @@
                 ctx.rotate(this.angle);
                 ctx.fillStyle = this.stats.color;
                 
-                const sizeMult = 1 + (this.level - 1) * 0.2;
+                // 4성, 5성 크기 더 키움
+                let sizeMult = 1 + (this.level - 1) * 0.2;
+                if (this.level >= 4) sizeMult += 0.2;
                 ctx.scale(sizeMult, sizeMult);
 
                 if (this.stats.shape === 'snowflake') {
@@ -1190,7 +1271,15 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 const starText = "★".repeat(this.level);
-                ctx.fillStyle = this.level === 1 ? '#d1d5db' : (this.level === 2 ? '#60a5fa' : '#fbbf24');
+                
+                // [수정] 4성, 5성 별 색상
+                let starFill = '#d1d5db';
+                if (this.level === 2) starFill = '#60a5fa';
+                if (this.level === 3) starFill = '#fbbf24';
+                if (this.level === 4) starFill = '#a855f7';
+                if (this.level === 5) starFill = '#ef4444';
+
+                ctx.fillStyle = starFill;
                 ctx.font = `bold ${12*scale}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.shadowColor = '#000';
@@ -1202,13 +1291,14 @@
         }
 
         class Projectile {
-            constructor(x, y, target, stats, level) {
+            constructor(x, y, target, stats, level, typeKey) {
                 this.x = x; this.y = y; this.target = target;
                 this.damage = stats.damage; this.color = stats.color;
                 this.isAoe = stats.aoe; this.slowFactor = stats.slowFactor;
                 this.slowDuration = stats.slowDuration;
                 this.speed = 10 * getScale(); 
                 this.radius = (3 + (level-1)) * getScale();
+                this.typeKey = typeKey;
                 
                 this.aoeRadius = (stats.aoeRadius || 60) * getScale();
 
@@ -1235,7 +1325,7 @@
 
                         gameState.enemies.forEach(e => {
                             if (distance(this.x, this.y, e.x, e.y) < this.aoeRadius) {
-                                e.takeDamage(this.damage);
+                                e.takeDamage(this.damage, this.typeKey);
                                 if (this.slowFactor) {
                                     e.applySlow(this.slowFactor, this.slowDuration);
                                 }
@@ -1249,7 +1339,7 @@
                         } else {
                             createParticles(this.x, this.y, 3, this.color);
                         }
-                        this.target.takeDamage(this.damage);
+                        this.target.takeDamage(this.damage, this.typeKey);
                     }
                     return true;
                 }
@@ -1263,7 +1353,7 @@
         }
 
         class FlameProjectile {
-            constructor(x, y, angle, damage, range, color, speedMultiplier = 1.0) {
+            constructor(x, y, angle, damage, range, color, typeKey, speedMultiplier = 1.0) {
                 this.x = x; this.y = y;
                 const speed = 6 * getScale() * speedMultiplier;
                 this.vx = Math.cos(angle) * speed;
@@ -1274,6 +1364,7 @@
                 this.color = color;
                 this.hitList = []; 
                 this.radius = 2 * getScale();
+                this.typeKey = typeKey;
             }
             update() {
                 this.x += this.vx * gameSpeed; 
@@ -1288,7 +1379,7 @@
 
                 gameState.enemies.forEach(e => {
                     if (e.health > 0 && !this.hitList.includes(e) && distance(this.x, this.y, e.x, e.y) < e.radius + this.radius) {
-                        e.takeDamage(this.damage);
+                        e.takeDamage(this.damage, this.typeKey);
                         this.hitList.push(e);
                     }
                 });
@@ -1438,9 +1529,82 @@
             }
             draw() { ctx.globalAlpha=this.life; ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; }
         }
+
+        class DamageText {
+            constructor(x, y, damage, color) {
+                this.x = x + (Math.random() - 0.5) * 20; 
+                this.y = y - 10;
+                this.damage = Math.round(damage);
+                this.color = color;
+                this.life = 1.0;
+                this.vy = -1; 
+            }
+            update() {
+                this.y += this.vy * gameSpeed * 0.5;
+                this.life -= 0.02 * gameSpeed;
+                return this.life <= 0;
+            }
+            draw() {
+                const scale = getScale();
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.font = `bold ${14 * scale}px sans-serif`;
+                ctx.textAlign = 'center';
+                
+                ctx.lineWidth = 3 * scale;
+                ctx.strokeStyle = 'black';
+                ctx.strokeText(this.damage, this.x, this.y);
+                
+                ctx.fillStyle = this.color;
+                ctx.fillText(this.damage, this.x, this.y);
+                
+                ctx.restore();
+            }
+        }
+
         function createParticles(x, y, n, c) { for(let i=0;i<n;i++) gameState.particles.push(new Particle(x,y,c)); }
 
-        // --- 메인 루프에서 소환 로직 관리 ---
+        setInterval(() => {
+            if (gameState.isGameOver) return;
+
+            TOWER_KEYS.forEach(key => {
+                gameState.statistics[key].currentDPS = gameState.statistics[key].buffer;
+                gameState.statistics[key].buffer = 0;
+            });
+            updateDPSPanel();
+        }, 1000);
+
+        function updateDPSPanel() {
+            if (dpsPanel.classList.contains('hidden')) return;
+
+            const sortedKeys = TOWER_KEYS.sort((a, b) => {
+                return gameState.statistics[b].currentDPS - gameState.statistics[a].currentDPS;
+            });
+
+            let html = '';
+            sortedKeys.forEach(key => {
+                const stat = gameState.statistics[key];
+                const info = TOWER_TYPES[key];
+                if (stat.totalDamage === 0 && stat.currentDPS === 0) return;
+
+                html += `
+                    <div class="dps-row flex justify-between items-center py-1 border-b border-gray-700 last:border-0">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full shadow" style="background-color: ${info.color}"></div>
+                            <span class="text-gray-300 font-bold">${info.name}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-yellow-400 font-mono font-bold w-12 inline-block">${stat.currentDPS.toLocaleString()}</span>
+                            <span class="text-gray-500 text-[10px] w-12 inline-block text-right">(${stat.totalDamage.toLocaleString()})</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (html === '') html = '<div class="text-gray-500 text-center py-2">데이터 없음</div>';
+            dpsList.innerHTML = html;
+        }
+
         function spawnWave() {
             let spawnQueue = [];
             const wave = gameState.wave;
@@ -1566,6 +1730,10 @@
                 if (gameState.particles[i].update()) gameState.particles.splice(i, 1);
             }
 
+            for (let i = gameState.damageTexts.length - 1; i >= 0; i--) {
+                if (gameState.damageTexts[i].update()) gameState.damageTexts.splice(i, 1);
+            }
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid();
             drawMap();
@@ -1578,6 +1746,7 @@
             gameState.enemies.forEach(e => e.draw());
             gameState.projectiles.forEach(p => p.draw());
             gameState.particles.forEach(p => p.draw());
+            gameState.damageTexts.forEach(t => t.draw());
 
             if (gameState.phase === 'SHOP' && gameState.selectedShopIdx !== null) {
                 const item = gameState.shopItems[gameState.selectedShopIdx];
@@ -1722,10 +1891,14 @@
             const info = TOWER_TYPES[tower.typeKey];
             document.getElementById('info-name').innerText = info.name;
             document.getElementById('info-level').innerText = `★ ${tower.level}성`;
-            document.getElementById('info-level').className = `text-sm font-bold mb-2 level-${tower.level}`;
+            // 레벨별 색상 (1~5)
+            let levelClass = `level-${tower.level}`;
+            document.getElementById('info-level').className = `text-sm font-bold mb-2 ${levelClass}`;
             document.getElementById('info-range').innerText = Math.round(tower.stats.range);
             document.getElementById('info-damage').innerText = Math.round(tower.stats.damage);
             
+            // 판매 가격 계산
+            // 기본가 * 2^(level-1) * 0.7
             const sellPrice = Math.floor(TOWER_COST * Math.pow(2, tower.level - 1) * 0.7);
             document.getElementById('sell-price').innerText = `+${sellPrice}`;
             
