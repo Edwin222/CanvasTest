@@ -153,9 +153,9 @@
     <script>
         const TOWER_DATA = {
             basic: { name: '전사', range: 120, damage: 90, cooldown: 50, color: '#3b82f6', shape: 'circle', desc: '적중시킨 적을 잠시 기절시킵니다.' },
-            rapid: { name: '궁수', range: 200, damage: 12, cooldown: 9, color: '#eab308', shape: 'square', desc: '공격속도가 빠른 타워입니다.' },
+            rapid: { name: '궁수', range: 200, damage: 15, cooldown: 8, color: '#eab308', shape: 'square', desc: '공격속도가 빠른 타워입니다.' },
             ice:   { name: '마법사', range: 130, damage: 8, cooldown: 45, color: '#22d3ee', shape: 'snowflake', slowFactor: 0.5, slowDuration: 90, desc: '적중시킨 적을 잠시 둔화시킵니다.' },
-            sniper: { name: '저격수', range: 350, damage: 90, cooldown: 120, color: '#dc2626', shape: 'ring', critChance: 0.5, desc: '50% 확률로 치명타를 입힙니다.' },
+            sniper: { name: '저격수', range: 350, damage: 90, cooldown: 100, color: '#dc2626', shape: 'ring', critChance: 0.5, desc: '50% 확률로 치명타를 입힙니다.' },
             aoe:    { name: '포병', range: 150, damage: 80, cooldown: 80, color: '#a855f7', shape: 'rect', aoe: true, desc: '원형 범위 공격을 합니다' },
             laser:  { name: '레이저', range: 250, damage: 40, cooldown: 60, color: '#38bdf8', shape: 'triangle', desc: '직선 범위 공격을 합니다' },
             flame:  { name: '화염방사기', range: 120, damage: 2, cooldown: 4, color: '#f97316', shape: 'pentagon', desc: '근거리 부채꼴 범위 공격을 합니다' },
@@ -166,7 +166,7 @@
             NORMAL: { name: '오크', speed: 1.5, hpMod: 1.0, radius: 15, color: '#22c55e', reward: 10 },
             FAST:   { name: '고블린', speed: 2.8, hpMod: 0.5, radius: 12, color: '#facc15', reward: 12 },
             TANK:   { name: '골렘', speed: 0.8, hpMod: 3.5, radius: 22, color: '#a855f7', reward: 25 },
-            BOSS:   { name: '드래곤', speed: 0.5, hpMod: 20.0, radius: 35, color: '#ef4444', reward: 150 }
+            BOSS:   { name: '드래곤', speed: 0.5, hpMod: 20.0, radius: 35, color: '#ef4444', reward: 500 }
         };
 
         const WAVE_DATA = {
@@ -454,9 +454,16 @@
                     }
                 });
 
+                let cooldownReduce = 0;
+                
+                if (this.typeKey === 'rapid') {
+                    if (this.level === 4) cooldownReduce = 1;
+                    if (this.level === 5) cooldownReduce = 2;
+                }
+
                 this.stats.damage = base.damage * multiplier * damageMult;
                 this.stats.range = base.range * rangeMult * rangeMultiplierByLevel;
-                this.stats.cooldown = base.cooldown * cooldownMult;
+                this.stats.cooldown = (base.cooldown - cooldownReduce) * cooldownMult;
                 this.stats.critChance = (base.critChance || 0) + critChanceAdd;
 
                 if (this.typeKey === 'sniper') {
